@@ -1,0 +1,20 @@
+services:
+  web:
+    build: . # This tells Docker Compose to build from the local Dockerfile
+    container_name: location_finder_app
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3 # Mount SQLite database
+    environment:
+      - DEBUG=True
+      - ALLOWED_HOSTS=0.0.0.0,127.0.0.1,localhost
+    command: >
+      sh -c "echo '📜 Starting Django Application...' &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+# i wnat to make docker compose up of my localproject and docker file is present in same folder
+# run that and create a image and run it so i can execute command docker compose build,up down
+
