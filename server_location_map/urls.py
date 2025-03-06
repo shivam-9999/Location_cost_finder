@@ -16,9 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from location.views import ProductListCreateAPIView
+from location.views import LocationImageUploadView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('products/', ProductListCreateAPIView.as_view(), name='pr_l_cr'),
+    path('api/location/upload/', LocationImageUploadView.as_view(), name='image-upload'),
 ]
