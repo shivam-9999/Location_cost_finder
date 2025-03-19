@@ -6,6 +6,10 @@ from rest_framework import serializers
 from .models import LocationImage
 from PIL import Image
 import os
+import logging
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 # Haversine Formula for Distance Calculation
 def haversine(lat1, lon1, lat2, lon2):
@@ -23,7 +27,7 @@ def haversine(lat1, lon1, lat2, lon2):
 # Function to Convert Address to Coordinates
 def get_coordinates(address):
     url = "https://maps.googleapis.com/maps/api/geocode/json"
-    params = {"address": address, "key": os.getenv('GOOGLE_GEOCODING_API_KEY')}
+    params = {"address": address, "key": os.getenv('GOOGLE_API_KEY')}
 
     try:
         response = requests.get(url, params=params)
@@ -72,28 +76,37 @@ class LocationImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'image', 'uploaded_at', 'latitude', 'longitude', 'distance_km', 'home_address']
 
     def validate(self, data):
-        """Check for duplicate image + home_address combination"""
+        """Check for duplicate image in the database, regardless of address."""
 
-        # Calculate the hash for uploaded image
         image = data.get('image')
+        home_address = data.get('home_address', '').strip()
+
+        # Calculate the image hash
         image_instance = LocationImage(image=image)
         image_hash = image_instance.calculate_image_hash()
 
-        # Check for duplicate record
-        home_address = data.get('home_address', '')
-        if LocationImage.objects.filter(image_hash=image_hash, home_address=home_address).exists():
-            raise serializers.ValidationError("❗ This image with the same address has already been uploaded.")
+        logger.info(f"🔍 Image Hash Calculated: {image_hash}")
 
-        # Return validated data if no duplicates found
+        # Check if the image already exists in the database
+        if LocationImage.objects.filter(image_hash=image_hash).exists():
+            logger.warning(f"❗ Duplicate Image Found - Hash: {image_hash}")
+            raise serializers.ValidationError("❗ This image already exists in the database and cannot be uploaded again.")
+
+        # Add hash to validated data to avoid recalculation in `create()`
+        data['image_hash'] = image_hash
+        logger.info(f"✅ Validation Passed - Data: {data}")
         return data
 
-
     def create(self, validated_data):
+        """Create method for saving validated data."""
+        logger.info(f"🔍 Before Create - Data Received: {validated_data}")
+
         # Handle home_address
         home_address = validated_data.pop('home_address', "35 Davean Dr, North York, ON, Canada M2L 2R6")
         home_lat, home_lng = get_coordinates(home_address)
 
         if not home_lat or not home_lng:
+            logger.error(f"❗ Invalid Address - {home_address}")
             raise serializers.ValidationError("Invalid home address. Could not fetch coordinates.")
 
         # Detect Landmark
@@ -105,40 +118,75 @@ class LocationImageSerializer(serializers.ModelSerializer):
             landmark_lng = landmark_data['landmark_lng']
             validated_data['distance_km'] = haversine(home_lat, home_lng, landmark_lat, landmark_lng)
         else:
-            landmark_data = {
-                "landmark_name": "Unknown",
-                "confidence_score": "0.0%",
-                "landmark_lat": 0.0,
-                "landmark_lng": 0.0
-            }
+            validated_data['distance_km'] = 0.0  # Default if no landmark found
 
         # Save Coordinates and Home Address
-        validated_data['latitude'] = home_lat
-        validated_data['longitude'] = home_lng
-        validated_data['home_address'] = home_address
+        validated_data.update({
+            'latitude': home_lat,
+            'longitude': home_lng,
+            'home_address': home_address,
+        })
+        
+        logger.info(f"✅ Final Data Before Save: {validated_data}")
 
         # Save Image Record
         image_instance = super().create(validated_data)
-
+        logger.info(f"✅ Successfully Created Image Record with ID: {image_instance.id}")
         return image_instance
 
     def update(self, instance, validated_data):
-        """ Update logic for updating home_address or image """
+        """ Update logic: 
+        - ✅ Allow `home_address` updates independently
+        - ✅ Check for duplicate image **only if provided**
+        """
+
+        logger.info(f"🔄 Update Request for Image ID: {instance.id}")
+
+        # Handle `home_address` update (Allowed without image requirement)
         if 'home_address' in validated_data:
             home_address = validated_data.pop('home_address')
             home_lat, home_lng = get_coordinates(home_address)
-            instance.latitude = home_lat
-            instance.longitude = home_lng
-            instance.home_address = home_address  # ✅ Save the updated address
 
-        if 'image' in validated_data:
-            landmark_data = detect_landmark(validated_data['image'])
+            if home_lat and home_lng:
+                instance.latitude = home_lat
+                instance.longitude = home_lng
+                instance.home_address = home_address
+                logger.info(f"✅ Address Updated: {home_address}")
+            else:
+                logger.error(f"❗ Invalid Address - {home_address}")
+                raise serializers.ValidationError("Invalid home address. Could not fetch coordinates.")
+
+        # Handle `image` update (Optional - Only check if provided)
+        new_image = validated_data.get('image')
+        if new_image:
+            new_image_instance = LocationImage(image=new_image)
+            new_image_hash = new_image_instance.calculate_image_hash()
+
+            logger.info(f"🔍 New Image Hash Calculated: {new_image_hash}")
+
+            # Check if new image already exists in the database
+            if LocationImage.objects.filter(image_hash=new_image_hash).exists():
+                logger.warning(f"❗ Attempted to update with duplicate image - Hash: {new_image_hash}")
+                raise serializers.ValidationError("❗ This image already exists in the database. Image update denied.")
+
+            # If not a duplicate, proceed with updating the image
+            instance.image = new_image
+            instance.image_hash = new_image_hash  # Ensure hash is updated if image changes
+
+            # Update landmark data if a new image is detected
+            landmark_data = detect_landmark(new_image)
             if landmark_data:
                 landmark_lat = landmark_data['landmark_lat']
                 landmark_lng = landmark_data['landmark_lng']
                 instance.distance_km = haversine(instance.latitude, instance.longitude, landmark_lat, landmark_lng)
+                logger.info(f"✅ Landmark Data Updated: {landmark_data}")
+            else:
+                instance.distance_km = 0.0
+                logger.info("ℹ️ No Landmark Detected for New Image")
 
+        # Save the updated instance
         instance.save()
+        logger.info(f"✅ Successfully Updated Image Record with ID: {instance.id}")
         return instance
 
     def to_representation(self, instance):
