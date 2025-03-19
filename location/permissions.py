@@ -1,10 +1,14 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-class InsertAndViewOnlyPermission(BasePermission):
+class CustomAdminPermission(BasePermission):
     """
-    Custom permission to allow only GET and POST requests.
-    Denies PUT, PATCH, and DELETE requests.
+    Admin can: GET, POST, PUT, PATCH (No DELETE)
+    Regular users can: GET, POST
     """
     def has_permission(self, request, view):
-        # Allow only GET and POST
+        # Admin logic
+        if request.user.is_staff:
+            return request.method in ['GET', 'POST', 'PUT', 'PATCH']
+
+        # Non-admin logic (regular users)
         return request.method in ['GET', 'POST']
