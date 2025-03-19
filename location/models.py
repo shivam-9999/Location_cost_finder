@@ -17,6 +17,8 @@ class LocationImage(models.Model):
 
     def calculate_image_hash(self):
         """Compute MD5 hash of the image."""
+        if not self.image:
+            return None  # ✅ Skip hashing if no image
         hasher = hashlib.md5()
         self.image.open()  # Open the file before hashing
         for chunk in self.image.chunks():
