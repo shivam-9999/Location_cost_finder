@@ -170,12 +170,11 @@
 
 
 
-
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
-from .permissions import CustomAdminPermission  # Import Custom Permission
+from .permissions import CustomAdminPermission
 from .models import LocationImage
 from .serializers import LocationImageSerializer
 import logging
@@ -210,27 +209,15 @@ class LocationImageUpdateView(generics.UpdateAPIView):
     lookup_field = 'pk'
     permission_classes = [IsAuthenticated, CustomAdminPermission]
 
-    def perform_update(self, serializer):
-        instance = serializer.instance
-        logger.info(f"🔄 [UPDATE REQUEST] Request to update Image ID: {instance.id}")
-        updated_instance = serializer.save()
-        logger.info(f"✅ Successfully Updated Image Record with ID: {updated_instance.id}")
-
-# ❌ Delete (Denied for All Users)
+# ✅ DELETE (SuperAdmin Only)
 class LocationImageDeleteView(generics.DestroyAPIView):
     queryset = LocationImage.objects.all()
     serializer_class = LocationImageSerializer
     lookup_field = 'pk'
     permission_classes = [IsAuthenticated, CustomAdminPermission]
 
-    def delete(self, request, *args, **kwargs):
-        return Response({"message": "❌ Delete is not allowed."}, status=status.HTTP_403_FORBIDDEN)
-
-# ❌ Bulk Delete (Denied for All Users)
+# ✅ Bulk Delete (SuperAdmin Only)
 class DeleteAllLocationImagesView(generics.DestroyAPIView):
     queryset = LocationImage.objects.all()
     serializer_class = LocationImageSerializer
     permission_classes = [IsAuthenticated, CustomAdminPermission]
-
-    def delete(self, request, *args, **kwargs):
-        return Response({"message": "❌ Bulk delete is not allowed."}, status=status.HTTP_403_FORBIDDEN)
