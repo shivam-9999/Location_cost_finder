@@ -1,6 +1,6 @@
 # Virtual Environment
 myenv/
-
+config/
 # Python Bytecode
 __pycache__/
 
@@ -17,4 +17,4 @@ media/
 
 # Environment Variables
 .env
-.config/
+
