@@ -8,6 +8,7 @@ from location.views import (
     LocationImageUpdateView,
     LocationImageDeleteView,
     DeleteAllLocationImagesView
+    
 )
 
 urlpatterns = [
