@@ -35,7 +35,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = ["0.0.0.0","localhost", "127.0.0.1", "locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net"]
 
-CSRF_TRUSTED_ORIGINS = ['locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net']
+CSRF_TRUSTED_ORIGINS = ['https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net']
 
 # Application definition
 
