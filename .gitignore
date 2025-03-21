@@ -19,3 +19,7 @@ media/
 .env
 
 db.sqlite3
+node_modules/
+frontend/
+DigiCertGlobalRootCA.crt.pem
+package.json
