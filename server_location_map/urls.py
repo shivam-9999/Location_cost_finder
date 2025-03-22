@@ -12,11 +12,14 @@ from location.views import (
 )
 
 urlpatterns = [
+    # Admin URLs
     path('admin/', admin.site.urls),
+    # Image Management URLs
     path('api/location/upload/', LocationImageUploadView.as_view(), name='image-upload'),
-    path('images/', LocationImageListCreateView.as_view(), name='image-list'),
-    path('images/<int:pk>/', LocationImageDetailView.as_view(), name='image-detail'),
-    path('images/<int:pk>/edit/', LocationImageUpdateView.as_view(), name='image-edit'),
-    path('images/<int:pk>/delete/', LocationImageDeleteView.as_view(), name='image-delete'),
-     path('images/delete-all/', DeleteAllLocationImagesView.as_view(), name='delete-all-images'),
+    path('api/location/images/', LocationImageListCreateView.as_view(), name='image-list'),
+    path('api/location/images/<int:pk>/', LocationImageDetailView.as_view(), name='image-detail'),
+    path('api/location/images/<int:pk>/edit/', LocationImageUpdateView.as_view(), name='image-edit'),
+    # Delete Urls
+    path('api/location/images/<int:pk>/delete/', LocationImageDeleteView.as_view(), name='image-delete'),
+     path('api/location/images/delete-all/', DeleteAllLocationImagesView.as_view(), name='delete-all-images'),
 ]
