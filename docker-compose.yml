@@ -13,8 +13,5 @@ services:
     command: >
       sh -c "echo '📜 Starting Django Application...' &&
              python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
-
-# i wnat to make docker compose up of my localproject and docker file is present in same folder
-# run that and create a image and run it so i can execute command docker compose build,up down
-
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000"
