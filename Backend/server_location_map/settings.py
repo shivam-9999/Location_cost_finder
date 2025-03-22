@@ -95,12 +95,20 @@ WSGI_APPLICATION = 'server_location_map.wsgi.application'
 #     }
 # }
 
+# Safely handle empty or incorrect URLs
+DATABASE_URL = os.getenv('AZURE_POSTGRESQL_CONNECTIONSTRING')
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is not set. Please configure it in Azure settings.")
+
+# Convert Azure's non-standard connection string if needed
+if "dbname=" in DATABASE_URL:
+    import urllib.parse
+    db_config = dict(param.split('=') for param in DATABASE_URL.split())
+    DATABASE_URL = f"postgres://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['dbname']}?sslmode={db_config['sslmode']}"
+
 DATABASES = {
-    'default': dj_database_url.parse(
-        os.getenv('AZURE_POSTGRESQL_CONNECTIONSTRING'),
-        conn_max_age=600,  # Optimizes connections
-        ssl_require=True   # Ensures SSL for Azure PostgreSQL
-    )
+    'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
 }
 
 APPEND_SLASH = False
