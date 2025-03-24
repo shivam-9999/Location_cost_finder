@@ -17,4 +17,9 @@ media/
 
 # Environment Variables
 .env
+<<<<<<< HEAD
 .config/
+=======
+
+db.sqlite3
+>>>>>>> 048ac31 (fixed deleted part)
