@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import urllib.parse
+from sqlalchemy import create_engine, text
 
 load_dotenv()  # Load .env file
 
@@ -81,11 +83,61 @@ WSGI_APPLICATION = 'server_location_map.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+
+def get_connection_uri():
+    db_user = os.getenv('DBUSER')
+    db_password = os.getenv('DBPASSWORD')
+    db_host = os.getenv('DBHOST')
+    db_name = os.getenv('DBNAME')
+    ssl_mode = os.getenv('SSLMODE', 'require')
+    port = os.getenv('PORT', '5432')
+
+    return f"postgresql://{db_user}:{db_password}@{db_host}:{port}/{db_name}?sslmode={ssl_mode}"
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DBNAME'),
+        'USER': os.getenv('DBUSER'),
+        'PASSWORD': os.getenv('DBPASSWORD'),
+        'HOST': os.getenv('DBHOST'),
+        'PORT': os.getenv('PORT', '5432'),
+        'OPTIONS': {
+            'sslmode': os.getenv('SSLMODE', 'require'),
+        },
     }
+}
+
+# Verify Connection (For Debugging)
+def verify_connection():
+    db_uri = get_connection_uri()
+    engine = create_engine(db_uri)
+
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT version();"))
+            print("✅ Connection Successful!")
+            print("PostgreSQL Version:", result.fetchone()[0])
+    except Exception as e:
+        print("❌ Connection Failed!")
+        print(e)
+
+# Run verification in development only
+if DEBUG:
+    verify_connection()
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ]
 }
 
 
@@ -146,5 +198,3 @@ LOGGING = {
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-

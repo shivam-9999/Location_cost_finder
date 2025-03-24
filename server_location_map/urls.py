@@ -17,5 +17,5 @@ urlpatterns = [
     path('images/<int:pk>/', LocationImageDetailView.as_view(), name='image-detail'),
     path('images/<int:pk>/edit/', LocationImageUpdateView.as_view(), name='image-edit'),
     path('images/<int:pk>/delete/', LocationImageDeleteView.as_view(), name='image-delete'),
-     path('images/delete-all/', DeleteAllLocationImagesView.as_view(), name='delete-all-images'),
+    path('images/delete-all/', DeleteAllLocationImagesView.as_view(), name='delete-all-images'),
 ]
