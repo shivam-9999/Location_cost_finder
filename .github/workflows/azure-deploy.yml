@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: locationcostfinder
+  AZURE_WEBAPP_NAME: test
   PYTHON_VERSION: '3.9'
 
 jobs:
