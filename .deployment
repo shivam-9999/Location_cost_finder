@@ -1,4 +1,6 @@
 [config]
+command = startup.txt
 SCM_DO_BUILD_DURING_DEPLOYMENT=true
 WEBSITE_RUN_FROM_PACKAGE=1
+ENABLE_ORYX_BUILD=true
 POST_BUILD_SCRIPT_PATH=startup.txt 
