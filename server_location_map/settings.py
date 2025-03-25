@@ -121,15 +121,31 @@ DATABASES = {
 def verify_connection():
     db_uri = get_connection_uri()
     engine = create_engine(db_uri)
-
+    
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        logger.info("Attempting to connect to database...")
+        logger.debug(f"Database URI: {db_uri}")
+        
         with engine.connect() as connection:
             result = connection.execute(text("SELECT version();"))
-            print("✅ Connection Successful!")
-            print("PostgreSQL Version:", result.fetchone()[0])
+            version = result.fetchone()[0]
+            logger.info("✅ Database Connection Successful!")
+            logger.info(f"PostgreSQL Version: {version}")
+            
+            # Test if we can query the database
+            test_query = connection.execute(text("SELECT current_database(), current_user;"))
+            db_info = test_query.fetchone()
+            logger.info(f"Connected to database: {db_info[0]}")
+            logger.info(f"Connected as user: {db_info[1]}")
+            
     except Exception as e:
-        print("❌ Connection Failed!")
-        print(e)
+        logger.error("❌ Database Connection Failed!")
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Error message: {str(e)}")
+        raise
 
 # Run verification in development only
 if DEBUG:
@@ -200,20 +216,42 @@ if not DEBUG:
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'django.log',
+            'formatter': 'verbose',
         },
     },
     'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
+        'handlers': ['console', 'file'],
+        'level': 'DEBUG',
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
-            'propagate': False,
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.db.backends': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
         },
     },
 }
