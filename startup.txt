@@ -1,1 +1,1 @@
-gunicorn --bind=0.0.0.0:8000 --timeout 600 server_location_map.wsgi:application 
+gunicorn --bind=0.0.0.0:80 --timeout 120 server_location_map.wsgi:application
