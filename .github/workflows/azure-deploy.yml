@@ -2,17 +2,21 @@ name: Deploy to Azure App Service
 
 on:
   push:
-    branches: [ "24thMarchRelease" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "24thMarchRelease" ]
+    branches: [ "main" ]
+  workflow_dispatch:
 
 env:
   AZURE_WEBAPP_NAME: locationcostfinder
-  PYTHON_VERSION: '3.10'
+  PYTHON_VERSION: '3.9'
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     
     steps:
     - uses: actions/checkout@v3
@@ -215,4 +219,5 @@ jobs:
       if: always()
       run: |
         echo "Fetching application logs..."
-        az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder --provider http --only-show-errors 
+        az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder --provider http --only-show-errors
+         
