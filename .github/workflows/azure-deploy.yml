@@ -9,12 +9,6 @@ on:
 env:
   AZURE_WEBAPP_NAME: locationcostfinder
   PYTHON_VERSION: '3.10'
-  DBNAME: locatiocostfinderdb
-  DBUSER: shivam
-  DBPASSWORD: abhi09^^
-  DBHOST: locationcostfinder.postgres.database.azure.com
-  PORT: 5432
-  SSLMODE: require
 
 jobs:
   build-and-deploy:
@@ -38,23 +32,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
       env:
-        DBNAME: ${{ env.DBNAME }}
-        DBUSER: ${{ env.DBUSER }}
-        DBPASSWORD: ${{ env.DBPASSWORD }}
-        DBHOST: ${{ env.DBHOST }}
-        PORT: ${{ env.PORT }}
-        SSLMODE: ${{ env.SSLMODE }}
+        DBNAME: ${{ secrets.DBNAME }}
+        DBUSER: ${{ secrets.DBUSER }}
+        DBPASSWORD: ${{ secrets.DBPASSWORD }}
+        DBHOST: ${{ secrets.DBHOST }}
+        PORT: ${{ secrets.PORT }}
+        SSLMODE: ${{ secrets.SSLMODE }}
         
     - name: Collect static files
       run: |
         python manage.py collectstatic --noinput
       env:
-        DBNAME: ${{ env.DBNAME }}
-        DBUSER: ${{ env.DBUSER }}
-        DBPASSWORD: ${{ env.DBPASSWORD }}
-        DBHOST: ${{ env.DBHOST }}
-        PORT: ${{ env.PORT }}
-        SSLMODE: ${{ env.SSLMODE }}
+        DBNAME: ${{ secrets.DBNAME }}
+        DBUSER: ${{ secrets.DBUSER }}
+        DBPASSWORD: ${{ secrets.DBPASSWORD }}
+        DBHOST: ${{ secrets.DBHOST }}
+        PORT: ${{ secrets.PORT }}
+        SSLMODE: ${{ secrets.SSLMODE }}
         DEBUG: 'False'
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         ALLOWED_HOSTS: ${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
@@ -74,27 +68,27 @@ jobs:
           [
             {
               "name": "DBNAME",
-              "value": "${{ env.DBNAME }}"
+              "value": "${{ secrets.DBNAME }}"
             },
             {
               "name": "DBUSER",
-              "value": "${{ env.DBUSER }}"
+              "value": "${{ secrets.DBUSER }}"
             },
             {
               "name": "DBPASSWORD",
-              "value": "${{ env.DBPASSWORD }}"
+              "value": "${{ secrets.DBPASSWORD }}"
             },
             {
               "name": "DBHOST",
-              "value": "${{ env.DBHOST }}"
+              "value": "${{ secrets.DBHOST }}"
             },
             {
               "name": "PORT",
-              "value": "${{ env.PORT }}"
+              "value": "${{ secrets.PORT }}"
             },
             {
               "name": "SSLMODE",
-              "value": "${{ env.SSLMODE }}"
+              "value": "${{ secrets.SSLMODE }}"
             },
             {
               "name": "DEBUG",
