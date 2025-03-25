@@ -26,13 +26,6 @@ jobs:
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Stop Web App
-      run: |
-        echo "Stopping web app..."
-        az webapp stop --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder
-        echo "Waiting for app to stop completely..."
-        sleep 30
         
     - name: Install dependencies
       run: |
@@ -74,14 +67,11 @@ jobs:
         ls -la deploy.zip
         
     - name: Deploy to Azure Web App
-      id: deploy-to-webapp
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        slot-name: 'production'
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: './deploy.zip'
-        clean: true
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         
     - name: Configure App Settings
       uses: azure/appservice-settings@v1
@@ -107,7 +97,7 @@ jobs:
             },
             {
               "name": "PORT",
-              "value": "${{ secrets.PORT }}"
+              "value": "8000"
             },
             {
               "name": "SSLMODE",
@@ -139,7 +129,19 @@ jobs:
             },
             {
               "name": "WEBSITES_PORT",
-              "value": "80"
+              "value": "8000"
+            },
+            {
+              "name": "WEBSITE_HTTPLOGGING_RETENTION_DAYS",
+              "value": "1"
+            },
+            {
+              "name": "WEBSITE_CONTAINER_START_TIME_LIMIT",
+              "value": "600"
+            },
+            {
+              "name": "WEBSITE_CONTAINER_MAX_RETRIES",
+              "value": "3"
             },
             {
               "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
@@ -154,7 +156,7 @@ jobs:
               "value": "1"
             }
           ]
-
+        
     - name: Run database migrations
       run: |
         python manage.py migrate
