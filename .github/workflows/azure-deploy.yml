@@ -9,6 +9,12 @@ on:
 env:
   AZURE_WEBAPP_NAME: locationcostfinder
   PYTHON_VERSION: '3.10'
+  DBNAME: locatiocostfinderdb
+  DBUSER: shivam
+  DBPASSWORD: abhi09^^
+  DBHOST: locationcostfinder.postgres.database.azure.com
+  PORT: 5432
+  SSLMODE: require
 
 jobs:
   build-and-deploy:
@@ -31,10 +37,27 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+      env:
+        DBNAME: ${{ env.DBNAME }}
+        DBUSER: ${{ env.DBUSER }}
+        DBPASSWORD: ${{ env.DBPASSWORD }}
+        DBHOST: ${{ env.DBHOST }}
+        PORT: ${{ env.PORT }}
+        SSLMODE: ${{ env.SSLMODE }}
         
     - name: Collect static files
       run: |
         python manage.py collectstatic --noinput
+      env:
+        DBNAME: ${{ env.DBNAME }}
+        DBUSER: ${{ env.DBUSER }}
+        DBPASSWORD: ${{ env.DBPASSWORD }}
+        DBHOST: ${{ env.DBHOST }}
+        PORT: ${{ env.PORT }}
+        SSLMODE: ${{ env.SSLMODE }}
+        DEBUG: 'False'
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        ALLOWED_HOSTS: ${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
         
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
@@ -42,6 +65,50 @@ jobs:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         package: .
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        
+    - name: Configure App Settings
+      uses: azure/appservice-settings@v1
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        app-settings-json: |
+          [
+            {
+              "name": "DBNAME",
+              "value": "${{ env.DBNAME }}"
+            },
+            {
+              "name": "DBUSER",
+              "value": "${{ env.DBUSER }}"
+            },
+            {
+              "name": "DBPASSWORD",
+              "value": "${{ env.DBPASSWORD }}"
+            },
+            {
+              "name": "DBHOST",
+              "value": "${{ env.DBHOST }}"
+            },
+            {
+              "name": "PORT",
+              "value": "${{ env.PORT }}"
+            },
+            {
+              "name": "SSLMODE",
+              "value": "${{ env.SSLMODE }}"
+            },
+            {
+              "name": "DEBUG",
+              "value": "False"
+            },
+            {
+              "name": "ALLOWED_HOSTS",
+              "value": "${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+            },
+            {
+              "name": "WEBSITES_PORT",
+              "value": "8000"
+            }
+          ]
         
     - name: Run database migrations
       run: |
