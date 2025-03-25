@@ -92,11 +92,27 @@ jobs:
             },
             {
               "name": "DEBUG",
-              "value": "False"
+              "value": "True"
+            },
+            {
+              "name": "DJANGO_LOG_LEVEL",
+              "value": "DEBUG"
             },
             {
               "name": "ALLOWED_HOSTS",
               "value": "${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+            },
+            {
+              "name": "CSRF_TRUSTED_ORIGINS",
+              "value": "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+            },
+            {
+              "name": "GOOGLE_API_KEY",
+              "value": "${{ secrets.GOOGLE_API_KEY }}"
+            },
+            {
+              "name": "SECRET_KEY",
+              "value": "${{ secrets.SECRET_KEY }}"
             },
             {
               "name": "WEBSITES_PORT",
