@@ -33,11 +33,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY =  os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ["0.0.0.0","localhost", "127.0.0.1"]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,locationcostfinder.azurewebsites.net').split(',')
 
+<<<<<<< HEAD
 
+=======
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'https://locationcostfinder.azurewebsites.net').split(',')
+>>>>>>> 24thMarchRelease
 # Application definition
 
 INSTALLED_APPS = [
@@ -52,7 +56,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
+    'django.middleware.security.SecurityMiddleware', 
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -121,15 +126,31 @@ DATABASES = {
 def verify_connection():
     db_uri = get_connection_uri()
     engine = create_engine(db_uri)
-
+    
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        logger.info("Attempting to connect to database...")
+        logger.debug(f"Database URI: {db_uri}")
+        
         with engine.connect() as connection:
             result = connection.execute(text("SELECT version();"))
-            print("✅ Connection Successful!")
-            print("PostgreSQL Version:", result.fetchone()[0])
+            version = result.fetchone()[0]
+            logger.info("✅ Database Connection Successful!")
+            logger.info(f"PostgreSQL Version: {version}")
+            
+            # Test if we can query the database
+            test_query = connection.execute(text("SELECT current_database(), current_user;"))
+            db_info = test_query.fetchone()
+            logger.info(f"Connected to database: {db_info[0]}")
+            logger.info(f"Connected as user: {db_info[1]}")
+            
     except Exception as e:
-        print("❌ Connection Failed!")
-        print(e)
+        logger.error("❌ Database Connection Failed!")
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Error message: {str(e)}")
+        raise
 
 # Run verification in development only
 if DEBUG:
@@ -177,26 +198,77 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-STATIC_URL = 'static/'
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
 
+# Security settings for production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = False  # Let Azure handle SSL
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
         },
     },
-    "root": {
-        "handlers": ["console"],
-        "level": "DEBUG" if os.getenv("DEBUG") == "True" else "INFO",
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'django.log',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'DEBUG',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.db.backends': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
     },
 }
+
+CORS_ALLOW_ALL_ORIGINS = True  # Since this is an API
+CORS_ALLOW_CREDENTIALS = True
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+<<<<<<< HEAD
+=======
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+>>>>>>> 24thMarchRelease

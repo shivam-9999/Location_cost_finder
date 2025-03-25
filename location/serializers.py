@@ -140,6 +140,10 @@ class LocationImageSerializer(serializers.ModelSerializer):
         image_instance = super().create(validated_data)
         logger.info(f"✅ Successfully Created Image Record with ID: {image_instance.id}")
         return image_instance
+<<<<<<< HEAD
+=======
+    
+>>>>>>> 24thMarchRelease
     
     
     def update(self, instance, validated_data):

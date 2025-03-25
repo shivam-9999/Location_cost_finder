@@ -1,0 +1,223 @@
+name: Deploy to Azure App Service
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: locationcostfinder
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Create and activate virtual environment
+      run: |
+        python -m venv ./venv
+        echo "Virtual environment created at: $(pwd)/venv"
+        source ./venv/bin/activate
+        which python
+        python --version
+        python -m pip install --upgrade pip
+        
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }} 
+    - name: Install dependencies
+      run: |
+        source ./venv/bin/activate
+        pip install -r requirements.txt
+      env:
+        DBNAME: ${{ secrets.DBNAME }}
+        DBUSER: ${{ secrets.DBUSER }}
+        DBPASSWORD: ${{ secrets.DBPASSWORD }}
+        DBHOST: ${{ secrets.DBHOST }}
+        PORT: ${{ secrets.PORT }}
+        SSLMODE: ${{ secrets.SSLMODE }}
+        
+    - name: Collect static files
+      run: |
+        source ./venv/bin/activate
+        python manage.py collectstatic --noinput
+      env:
+        DBNAME: ${{ secrets.DBNAME }}
+        DBUSER: ${{ secrets.DBUSER }}
+        DBPASSWORD: ${{ secrets.DBPASSWORD }}
+        DBHOST: ${{ secrets.DBHOST }}
+        PORT: ${{ secrets.PORT }}
+        SSLMODE: ${{ secrets.SSLMODE }}
+        DEBUG: 'False'
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        ALLOWED_HOSTS: ${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
+
+    - name: Create deployment package
+      run: |
+        rm -rf deployment
+        mkdir deployment
+        cp -r * deployment/ || true
+        cp .deployment deployment/ || true
+        cp .skipPythonDeployment deployment/ || true
+        cp startup.txt deployment/ || true
+        cd deployment
+        zip -r ../deploy.zip .
+        cd ..
+        ls -la deploy.zip
+        
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        package: './deploy.zip'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        
+    - name: Configure App Settings
+      uses: azure/appservice-settings@v1
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        app-settings-json: |
+          [
+            {
+              "name": "DBNAME",
+              "value": "${{ secrets.DBNAME }}"
+            },
+            {
+              "name": "DBUSER",
+              "value": "${{ secrets.DBUSER }}"
+            },
+            {
+              "name": "DBPASSWORD",
+              "value": "${{ secrets.DBPASSWORD }}"
+            },
+            {
+              "name": "DBHOST",
+              "value": "${{ secrets.DBHOST }}"
+            },
+            {
+              "name": "PORT",
+              "value": "8000"
+            },
+            {
+              "name": "SSLMODE",
+              "value": "${{ secrets.SSLMODE }}"
+            },
+            {
+              "name": "DEBUG",
+              "value": "True"
+            },
+            {
+              "name": "DJANGO_LOG_LEVEL",
+              "value": "DEBUG"
+            },
+            {
+              "name": "ALLOWED_HOSTS",
+              "value": "${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+            },
+            {
+              "name": "CSRF_TRUSTED_ORIGINS",
+              "value": "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+            },
+            {
+              "name": "GOOGLE_API_KEY",
+              "value": "${{ secrets.GOOGLE_API_KEY }}"
+            },
+            {
+              "name": "SECRET_KEY",
+              "value": "${{ secrets.SECRET_KEY }}"
+            },
+            {
+              "name": "WEBSITES_PORT",
+              "value": "8000"
+            },
+            {
+              "name": "WEBSITE_HTTPLOGGING_RETENTION_DAYS",
+              "value": "1"
+            },
+            {
+              "name": "WEBSITE_CONTAINER_START_TIME_LIMIT",
+              "value": "600"
+            },
+            {
+              "name": "WEBSITE_CONTAINER_MAX_RETRIES",
+              "value": "3"
+            },
+            {
+              "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+              "value": "true"
+            },
+            {
+              "name": "ENABLE_ORYX_BUILD",
+              "value": "true"
+            },
+            {
+              "name": "WEBSITE_RUN_FROM_PACKAGE",
+              "value": "1"
+            }
+          ]
+        
+    - name: Run database migrations
+      run: |
+        source ./venv/bin/activate
+        python manage.py migrate
+      env:
+        DBNAME: ${{ secrets.DBNAME }}
+        DBUSER: ${{ secrets.DBUSER }}
+        DBPASSWORD: ${{ secrets.DBPASSWORD }}
+        DBHOST: ${{ secrets.DBHOST }}
+        PORT: ${{ secrets.PORT }}
+        SSLMODE: ${{ secrets.SSLMODE }}
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DEBUG: False
+        ALLOWED_HOSTS: ${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
+
+    - name: Start Web App and Verify
+      run: |
+        echo "Starting web app..."
+        az webapp start --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder
+        echo "Waiting for app to start..."
+        sleep 30
+        
+        # Verify the app is running
+        echo "Verifying app status..."
+        STATUS=$(az webapp show --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder --query state -o tsv)
+        echo "App status: $STATUS"
+        
+        if [ "$STATUS" != "Running" ]; then
+          echo "App is not running. Attempting to start again..."
+          az webapp start --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder
+          sleep 30
+          
+          # Check status again
+          STATUS=$(az webapp show --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder --query state -o tsv)
+          echo "App status after second attempt: $STATUS"
+          
+          if [ "$STATUS" != "Running" ]; then
+            echo "Failed to start the web app"
+            exit 1
+          fi
+        fi
+        
+        echo "Web app is running successfully"
+        
+    - name: Check Application Logs
+      if: always()
+      run: |
+        echo "Fetching application logs..."
+        az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder --provider http --only-show-errors
+         
