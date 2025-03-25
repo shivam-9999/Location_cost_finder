@@ -22,14 +22,19 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         
+    - name: Create and activate virtual environment
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        python -m pip install --upgrade pip
+        
     - name: Log in to Azure
       uses: azure/login@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-        
+        creds: ${{ secrets.AZURE_CREDENTIALS }} 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        source venv/bin/activate
         pip install -r requirements.txt
       env:
         DBNAME: ${{ secrets.DBNAME }}
@@ -41,6 +46,7 @@ jobs:
         
     - name: Collect static files
       run: |
+        source venv/bin/activate
         python manage.py collectstatic --noinput
       env:
         DBNAME: ${{ secrets.DBNAME }}
@@ -159,6 +165,7 @@ jobs:
         
     - name: Run database migrations
       run: |
+        source venv/bin/activate
         python manage.py migrate
       env:
         DBNAME: ${{ secrets.DBNAME }}
