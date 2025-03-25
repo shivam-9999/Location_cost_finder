@@ -7,3 +7,8 @@ pillow
 google-cloud-vision
 requests
 python-dotenv
+psycopg2-binary
+sqlalchemy
+gunicorn==21.2.0
+whitenoise==6.6.0
+django-cors-headers==4.3.1
