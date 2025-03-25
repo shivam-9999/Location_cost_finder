@@ -29,7 +29,9 @@ jobs:
 
     - name: Stop Web App
       run: |
+        echo "Stopping web app..."
         az webapp stop --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder
+        echo "Waiting for app to stop completely..."
         sleep 30
         
     - name: Install dependencies
@@ -168,6 +170,37 @@ jobs:
         DEBUG: False
         ALLOWED_HOSTS: ${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
 
-    - name: Start Web App
+    - name: Start Web App and Verify
       run: |
-        az webapp start --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder 
+        echo "Starting web app..."
+        az webapp start --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder
+        echo "Waiting for app to start..."
+        sleep 30
+        
+        # Verify the app is running
+        echo "Verifying app status..."
+        STATUS=$(az webapp show --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder --query state -o tsv)
+        echo "App status: $STATUS"
+        
+        if [ "$STATUS" != "Running" ]; then
+          echo "App is not running. Attempting to start again..."
+          az webapp start --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder
+          sleep 30
+          
+          # Check status again
+          STATUS=$(az webapp show --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder --query state -o tsv)
+          echo "App status after second attempt: $STATUS"
+          
+          if [ "$STATUS" != "Running" ]; then
+            echo "Failed to start the web app"
+            exit 1
+          fi
+        fi
+        
+        echo "Web app is running successfully"
+        
+    - name: Check Application Logs
+      if: always()
+      run: |
+        echo "Fetching application logs..."
+        az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group Locationcostfinder --provider http --only-show-errors 
