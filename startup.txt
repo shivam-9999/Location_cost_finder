@@ -1,1 +1,2 @@
+# Gunicorn configuration with health checks and optimized workers
 gunicorn --bind=0.0.0.0:80 --timeout 120 --log-level debug --error-logfile - --access-logfile - --workers 4 --threads 2 --worker-class gthread server_location_map.wsgi:application
