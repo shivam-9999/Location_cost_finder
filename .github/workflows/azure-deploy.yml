@@ -12,6 +12,9 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     
     steps:
     - uses: actions/checkout@v4
@@ -21,6 +24,11 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         cache: 'pip'
+
+    - name: Create virtual environment
+      run: |
+        python -m venv venv
+        source venv/bin/activate
 
     - name: Install dependencies
       run: |
@@ -34,14 +42,30 @@ jobs:
         DJANGO_SETTINGS_MODULE: server_location_map.settings
         DEBUG: 'False'
         ALLOWED_HOSTS: '.azurewebsites.net,localhost,127.0.0.1'
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     - name: Create deployment package
       run: |
         zip -r deploy.zip . -x "*.git*" "*.github*" "venv/*" "*.pytest_cache*" "__pycache__/*" "*.pyc"
 
     - name: Deploy to Azure Web App
+      id: deploy-to-webapp
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: deploy.zip 
+        package: deploy.zip
+
+    - name: Apply database migrations
+      run: |
+        python manage.py migrate --noinput
+      env:
+        DJANGO_SETTINGS_MODULE: server_location_map.settings
+        DEBUG: 'False'
+        ALLOWED_HOSTS: '.azurewebsites.net,localhost,127.0.0.1'
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }} 

@@ -21,8 +21,16 @@ python manage.py collectstatic --noinput
 
 # Apply database migrations
 echo "Applying database migrations..."
-python manage.py migrate
+python manage.py migrate --noinput
 
-# Start Gunicorn
+# Start Gunicorn with proper settings
 echo "Starting Gunicorn..."
-gunicorn server_location_map.wsgi:application --bind=0.0.0.0:8000 
+gunicorn server_location_map.wsgi:application \
+    --bind=0.0.0.0:8000 \
+    --workers=4 \
+    --threads=2 \
+    --timeout=120 \
+    --access-logfile=- \
+    --error-logfile=- \
+    --capture-output \
+    --enable-stdio-inheritance 
