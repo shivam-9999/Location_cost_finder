@@ -11,6 +11,7 @@ if [ -d "venv" ]; then
 fi
 
 # Install dependencies
+echo "Installing dependencies..."
 pip install -r requirements.txt
 
 # Collect static files
@@ -21,14 +22,18 @@ python manage.py collectstatic --noinput
 echo "Applying database migrations..."
 python manage.py migrate --noinput
 
+# Create log directory
+mkdir -p logs
+
 # Start Gunicorn with proper settings
 echo "Starting Gunicorn..."
-gunicorn server_location_map.wsgi:application \
+exec gunicorn server_location_map.wsgi:application \
     --bind=0.0.0.0:8000 \
     --workers=4 \
     --threads=2 \
     --timeout=120 \
-    --access-logfile=- \
-    --error-logfile=- \
+    --access-logfile=logs/access.log \
+    --error-logfile=logs/error.log \
     --capture-output \
-    --enable-stdio-inheritance 
+    --enable-stdio-inheritance \
+    --log-level=debug 
