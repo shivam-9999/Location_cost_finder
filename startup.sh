@@ -10,31 +10,26 @@ export PORT=8000
 export WEBSITES_PORT=8000
 echo "Forcing port to 8000 for both PORT and WEBSITES_PORT"
 
+# Set the correct Python path
+export PYTHONPATH=/tmp/8dd6c24546b0aef/antenv/lib/python3.10/site-packages:$PYTHONPATH
+
 # Activate virtual environment if it exists
-if [ -d "antenv" ]; then
+if [ -d "/tmp/8dd6c24546b0aef/antenv" ]; then
     echo "Activating antenv virtual environment..."
-    source antenv/bin/activate
+    . /tmp/8dd6c24546b0aef/antenv/bin/activate
+elif [ -d "antenv" ]; then
+    echo "Activating local antenv virtual environment..."
+    . antenv/bin/activate
 elif [ -d "venv" ]; then
     echo "Activating venv virtual environment..."
-    source venv/bin/activate
+    . venv/bin/activate
 fi
 
-# Install dependencies
-echo "Installing dependencies..."
-pip install -r requirements.txt
-
-# Verify installations
-echo "Verifying installations..."
-pip show django-cors-headers
-python -c "import django; import corsheaders; print('Django version:', django.get_version()); print('CORS headers installed successfully')"
-
-# Collect static files
-echo "Collecting static files..."
-python manage.py collectstatic --noinput
-
-# Apply database migrations
-echo "Applying database migrations..."
-python manage.py migrate --noinput
+# Print environment information
+echo "Python version:"
+python --version
+echo "Current directory: $(pwd)"
+echo "Python path: $PYTHONPATH"
 
 # Create log directory
 mkdir -p logs
@@ -44,8 +39,6 @@ echo "Created logs directory"
 echo "Starting configuration:"
 echo "PORT: $PORT"
 echo "WEBSITES_PORT: $WEBSITES_PORT"
-echo "Current directory: $(pwd)"
-echo "Python path: $PYTHONPATH"
 echo "Installed packages:"
 pip list
 
@@ -53,8 +46,8 @@ pip list
 echo "Starting Gunicorn on port 8000..."
 exec gunicorn server_location_map.wsgi:application \
     --bind=0.0.0.0:8000 \
-    --workers=4 \
-    --threads=2 \
+    --workers=2 \
+    --threads=4 \
     --timeout=120 \
     --access-logfile=logs/access.log \
     --error-logfile=logs/error.log \
