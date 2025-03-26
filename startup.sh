@@ -13,10 +13,6 @@ echo "Forcing port to 8000 for both PORT and WEBSITES_PORT"
 # Set the correct Python path
 export PYTHONPATH=/home/site/wwwroot/antenv/lib/python3.10/site-packages:$PYTHONPATH
 
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate
-
 # Install dependencies
 pip install -r requirements.txt
 
