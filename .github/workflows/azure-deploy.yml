@@ -45,10 +45,10 @@ jobs:
         DEBUG: 'False'
         ALLOWED_HOSTS: 'locationcostfinder.azurewebsites.net'
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        DB_NAME: ${{ secrets.DB_NAME }}
-        DB_USER: ${{ secrets.DB_USER }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        DB_HOST: ${{ secrets.DB_HOST }}
+        DBNAME: ${{ secrets.DBNAME }}
+        DBUSER: ${{ secrets.DBUSER }}
+        DBPASSWORD: ${{ secrets.DBPASSWORD }}
+        DBHOST: ${{ secrets.DBHOST }}
         DB_PORT: ${{ secrets.DB_PORT }}
         GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
@@ -73,9 +73,9 @@ jobs:
         DEBUG: 'False'
         ALLOWED_HOSTS: 'locationcostfinder.azurewebsites.net'
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        DB_NAME: ${{ secrets.DB_NAME }}
-        DB_USER: ${{ secrets.DB_USER }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        DB_HOST: ${{ secrets.DB_HOST }}
+        DBNAME: ${{ secrets.DBNAME }}
+        DBUSER: ${{ secrets.DBUSER }}
+        DBPASSWORD: ${{ secrets.DBPASSWORD }}
+        DBHOST: ${{ secrets.DBHOST }}
         DB_PORT: ${{ secrets.DB_PORT }}
         GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} 
