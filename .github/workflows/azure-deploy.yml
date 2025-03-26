@@ -18,6 +18,7 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -31,17 +32,25 @@ jobs:
 
     - name: Install dependencies
       run: |
+        source venv/bin/activate
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
     - name: Collect static files
       run: |
+        source venv/bin/activate
         python manage.py collectstatic --noinput
       env:
         DJANGO_SETTINGS_MODULE: server_location_map.settings
         DEBUG: 'False'
-        ALLOWED_HOSTS: '.azurewebsites.net,localhost,127.0.0.1'
+        ALLOWED_HOSTS: 'locationcostfinder.azurewebsites.net'
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
     - name: Create deployment package
       run: |
@@ -57,14 +66,16 @@ jobs:
 
     - name: Apply database migrations
       run: |
+        source venv/bin/activate
         python manage.py migrate --noinput
       env:
         DJANGO_SETTINGS_MODULE: server_location_map.settings
         DEBUG: 'False'
-        ALLOWED_HOSTS: '.azurewebsites.net,localhost,127.0.0.1'
+        ALLOWED_HOSTS: 'locationcostfinder.azurewebsites.net'
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         DB_NAME: ${{ secrets.DB_NAME }}
         DB_USER: ${{ secrets.DB_USER }}
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_HOST: ${{ secrets.DB_HOST }}
-        DB_PORT: ${{ secrets.DB_PORT }} 
+        DB_PORT: ${{ secrets.DB_PORT }}
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} 
