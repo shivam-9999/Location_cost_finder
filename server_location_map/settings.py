@@ -105,31 +105,16 @@ def get_connection_uri():
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'postgres'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT', '5432'),
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
     }
 }
-
-# Verify Connection (For Debugging)
-def verify_connection():
-    db_uri = get_connection_uri()
-    engine = create_engine(db_uri)
-
-    try:
-        with engine.connect() as connection:
-            result = connection.execute(text("SELECT version();"))
-            print("✅ Connection Successful!")
-            print("PostgreSQL Version:", result.fetchone()[0])
-    except Exception as e:
-        print("❌ Connection Failed!")
-        print(e)
-
-# Run verification in development only
-if DEBUG:
-    verify_connection()
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],

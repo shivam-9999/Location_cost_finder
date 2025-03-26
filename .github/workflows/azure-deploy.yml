@@ -32,6 +32,8 @@ jobs:
         python manage.py collectstatic --noinput
       env:
         DJANGO_SETTINGS_MODULE: server_location_map.settings
+        DEBUG: 'False'
+        ALLOWED_HOSTS: '.azurewebsites.net,localhost,127.0.0.1'
 
     - name: Create deployment package
       run: |
