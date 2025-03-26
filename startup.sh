@@ -48,15 +48,19 @@ echo "WEBSITES_PORT: $WEBSITES_PORT"
 echo "Installed packages:"
 pip list
 
-# Start Gunicorn with proper settings
+# Collect static files
+python manage.py collectstatic --noinput
+
+# Apply database migrations
+python manage.py migrate
+
+# Start Gunicorn with proper configuration
 echo "Starting Gunicorn on port 8000..."
 exec gunicorn server_location_map.wsgi:application \
-    --bind=0.0.0.0:8000 \
-    --workers=2 \
-    --threads=4 \
-    --timeout=120 \
-    --access-logfile=logs/access.log \
-    --error-logfile=logs/error.log \
+    --bind 0.0.0.0:8000 \
+    --workers 4 \
+    --timeout 120 \
+    --access-logfile logs/access.log \
+    --error-logfile logs/error.log \
     --capture-output \
-    --enable-stdio-inheritance \
-    --log-level=debug 
+    --log-level debug 
