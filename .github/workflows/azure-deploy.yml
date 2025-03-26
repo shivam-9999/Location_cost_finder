@@ -37,6 +37,13 @@ jobs:
         source venv/bin/activate
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        # Verify django-cors-headers installation
+        pip show django-cors-headers
+
+    - name: Verify Django installation
+      run: |
+        source venv/bin/activate
+        python -c "import django; import corsheaders; print('Django version:', django.get_version()); print('CORS headers installed successfully')"
 
     - name: Collect static files
       run: |

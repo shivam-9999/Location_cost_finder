@@ -23,6 +23,11 @@ fi
 echo "Installing dependencies..."
 pip install -r requirements.txt
 
+# Verify installations
+echo "Verifying installations..."
+pip show django-cors-headers
+python -c "import django; import corsheaders; print('Django version:', django.get_version()); print('CORS headers installed successfully')"
+
 # Collect static files
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
@@ -40,6 +45,9 @@ echo "Starting configuration:"
 echo "PORT: $PORT"
 echo "WEBSITES_PORT: $WEBSITES_PORT"
 echo "Current directory: $(pwd)"
+echo "Python path: $PYTHONPATH"
+echo "Installed packages:"
+pip list
 
 # Start Gunicorn with proper settings
 echo "Starting Gunicorn on port 8000..."
