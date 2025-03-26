@@ -8,6 +8,8 @@ on:
 env:
   AZURE_WEBAPP_NAME: locationcostfinder
   PYTHON_VERSION: '3.10'
+  PORT: 8000
+  WEBSITES_PORT: 8000
 
 jobs:
   build-and-deploy:
@@ -51,6 +53,8 @@ jobs:
         DBHOST: ${{ secrets.DBHOST }}
         DB_PORT: ${{ secrets.DB_PORT }}
         GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        PORT: 8000
+        WEBSITES_PORT: 8000
 
     - name: Create deployment package
       run: |
@@ -76,6 +80,9 @@ jobs:
         DBHOST: ${{ secrets.DBHOST }}
         DB_PORT: ${{ secrets.DB_PORT }}
         GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        SCM_DO_BUILD_DURING_DEPLOYMENT: true
+        DOCKER_ENABLE_CI: true
+        WEBSITES_CONTAINER_START_TIME_LIMIT: 600
 
     - name: Apply database migrations
       run: |
@@ -91,4 +98,6 @@ jobs:
         DBPASSWORD: ${{ secrets.DBPASSWORD }}
         DBHOST: ${{ secrets.DBHOST }}
         DB_PORT: ${{ secrets.DB_PORT }}
-        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} 
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        PORT: 8000
+        WEBSITES_PORT: 8000 
