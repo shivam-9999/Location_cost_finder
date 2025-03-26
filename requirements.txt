@@ -11,3 +11,4 @@ whitenoise
 gunicorn
 psycopg2-binary
 sqlalchemy==2.0.27
+django-cors-headers
