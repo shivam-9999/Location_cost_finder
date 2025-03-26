@@ -13,23 +13,13 @@ echo "Forcing port to 8000 for both PORT and WEBSITES_PORT"
 # Set the correct Python path
 export PYTHONPATH=/home/site/wwwroot/antenv/lib/python3.10/site-packages:$PYTHONPATH
 
-# Activate virtual environment
-echo "Looking for virtual environment..."
-if [ -d "/home/site/wwwroot/antenv" ]; then
-    echo "Found Azure virtual environment at /home/site/wwwroot/antenv"
-    . /home/site/wwwroot/antenv/bin/activate
-elif [ -d "antenv" ]; then
-    echo "Found local antenv virtual environment"
-    . antenv/bin/activate
-elif [ -d "venv" ]; then
-    echo "Found local venv virtual environment"
-    . venv/bin/activate
-else
-    echo "No virtual environment found. Creating one..."
-    python -m venv antenv
-    . antenv/bin/activate
-    pip install -r requirements.txt
-fi
+# Create and activate virtual environment
+python -m venv antenv
+source antenv/bin/activate
+
+# Upgrade pip and install requirements
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 
 # Print environment information
 echo "Python version:"
@@ -52,15 +42,7 @@ pip list
 python manage.py collectstatic --noinput
 
 # Apply database migrations
-python manage.py migrate
+python manage.py migrate --noinput
 
-# Start Gunicorn with proper configuration
-echo "Starting Gunicorn on port 8000..."
-exec gunicorn server_location_map.wsgi:application \
-    --bind 0.0.0.0:8000 \
-    --workers 4 \
-    --timeout 120 \
-    --access-logfile logs/access.log \
-    --error-logfile logs/error.log \
-    --capture-output \
-    --log-level debug 
+# Start Gunicorn
+gunicorn server_location_map.wsgi:application --bind=0.0.0.0:8000 
