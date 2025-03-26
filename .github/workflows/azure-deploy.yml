@@ -1,111 +1,79 @@
-name: Deploy to Azure
+name: Deploy Django App to Azure
 
 on:
   push:
-    branches: [ "deploy-to-azure" ]
+    branches: [ deploy-to-azure ]
+  pull_request:
+    branches: [ deploy-to-azure ]
   workflow_dispatch:
 
 env:
   AZURE_WEBAPP_NAME: locationcostfinder
+  AZURE_WEBAPP_PACKAGE_PATH: '.'
   PYTHON_VERSION: '3.10'
-  PORT: 8000
-  WEBSITES_PORT: 8000
-  DATABASE_PORT: 5432  # Standard PostgreSQL port
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    
+    environment: production
+
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
-
-    - name: Create virtual environment
-      run: |
-        python -m venv venv
-        source venv/bin/activate
 
     - name: Install dependencies
       run: |
-        source venv/bin/activate
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        # Verify django-cors-headers installation
-        pip show django-cors-headers
-
-    - name: Verify Django installation
-      run: |
-        source venv/bin/activate
-        python -c "import django; import corsheaders; print('Django version:', django.get_version()); print('CORS headers installed successfully')"
 
     - name: Collect static files
       run: |
-        source venv/bin/activate
         python manage.py collectstatic --noinput
       env:
         DJANGO_SETTINGS_MODULE: server_location_map.settings
-        DEBUG: 'False'
-        ALLOWED_HOSTS: 'locationcostfinder.azurewebsites.net'
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
         DBNAME: ${{ secrets.DBNAME }}
         DBUSER: ${{ secrets.DBUSER }}
         DBPASSWORD: ${{ secrets.DBPASSWORD }}
         DBHOST: ${{ secrets.DBHOST }}
-        DB_PORT: ${{ env.DATABASE_PORT }}
+        DB_PORT: ${{ secrets.DB_PORT }}
         GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-        PORT: 8000
-        WEBSITES_PORT: 8000
+
+    - name: Run database migrations
+      run: |
+        python manage.py migrate
+      env:
+        DJANGO_SETTINGS_MODULE: server_location_map.settings
+        DBNAME: ${{ secrets.DBNAME }}
+        DBUSER: ${{ secrets.DBUSER }}
+        DBPASSWORD: ${{ secrets.DBPASSWORD }}
+        DBHOST: ${{ secrets.DBHOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
     - name: Create deployment package
       run: |
-        zip -r deploy.zip . -x "*.git*" "*.github*" "venv/*" "*.pytest_cache*" "__pycache__/*" "*.pyc"
+        zip -r app.zip . -x "*.git*" -x "*.env*" -x "*.venv*" -x "*.vscode*"
 
-    - name: Deploy to Azure Web App
-      id: deploy-to-webapp
+    - name: Deploy to Azure
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: deploy.zip
-      env:
-        WEBSITES_PORT: 8000
-        PORT: 8000
-        DJANGO_SETTINGS_MODULE: server_location_map.settings
-        DEBUG: 'False'
-        ALLOWED_HOSTS: 'locationcostfinder.azurewebsites.net'
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        DBNAME: ${{ secrets.DBNAME }}
-        DBUSER: ${{ secrets.DBUSER }}
-        DBPASSWORD: ${{ secrets.DBPASSWORD }}
-        DBHOST: ${{ secrets.DBHOST }}
-        DB_PORT: ${{ env.DATABASE_PORT }}
-        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-        SCM_DO_BUILD_DURING_DEPLOYMENT: true
-        DOCKER_ENABLE_CI: true
-        WEBSITES_CONTAINER_START_TIME_LIMIT: 600
+        package: app.zip
+        app-settings: |
+          -WEBSITES_PORT=8000
+          -PORT=8000
+          -DJANGO_SETTINGS_MODULE=server_location_map.settings
+          -DBNAME=${{ secrets.DBNAME }}
+          -DBUSER=${{ secrets.DBUSER }}
+          -DBPASSWORD=${{ secrets.DBPASSWORD }}
+          -DBHOST=${{ secrets.DBHOST }}
+          -DB_PORT=${{ secrets.DB_PORT }}
+          -GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
 
-    - name: Apply database migrations
+    - name: Azure logout
       run: |
-        source venv/bin/activate
-        python manage.py migrate --noinput
-      env:
-        DJANGO_SETTINGS_MODULE: server_location_map.settings
-        DEBUG: 'False'
-        ALLOWED_HOSTS: 'locationcostfinder.azurewebsites.net'
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        DBNAME: ${{ secrets.DBNAME }}
-        DBUSER: ${{ secrets.DBUSER }}
-        DBPASSWORD: ${{ secrets.DBPASSWORD }}
-        DBHOST: ${{ secrets.DBHOST }}
-        DB_PORT: ${{ env.DATABASE_PORT }}
-        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-        PORT: 8000
-        WEBSITES_PORT: 8000 
+        az logout 
