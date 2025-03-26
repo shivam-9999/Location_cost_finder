@@ -58,11 +58,17 @@ jobs:
       run: |
         zip -r app.zip . -x "*.git*" -x "*.env*" -x "*.venv*" -x "*.vscode*"
 
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
     - name: Deploy to Azure
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         package: app.zip
+        slot-name: production
         app-settings: |
           -WEBSITES_PORT=8000
           -PORT=8000
