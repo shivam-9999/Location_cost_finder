@@ -1,0 +1,45 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [ "deploy-to-azure" ]
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: locationcostfinder
+  PYTHON_VERSION: '3.10'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Collect static files
+      run: |
+        python manage.py collectstatic --noinput
+      env:
+        DJANGO_SETTINGS_MODULE: server_location_map.settings
+
+    - name: Create deployment package
+      run: |
+        zip -r deploy.zip . -x "*.git*" "*.github*" "venv/*" "*.pytest_cache*" "__pycache__/*" "*.pyc"
+
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: deploy.zip 

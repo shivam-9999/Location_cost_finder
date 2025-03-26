@@ -7,3 +7,6 @@ pillow
 google-cloud-vision
 requests
 python-dotenv
+whitenoise
+gunicorn
+psycopg2-binary
