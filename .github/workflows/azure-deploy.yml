@@ -15,8 +15,6 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: production
-
     steps:
     - uses: actions/checkout@v3
 
@@ -33,30 +31,14 @@ jobs:
     - name: Collect static files
       run: |
         python manage.py collectstatic --noinput
-      env:
-        DJANGO_SETTINGS_MODULE: server_location_map.settings
-        DBNAME: ${{ secrets.DBNAME }}
-        DBUSER: ${{ secrets.DBUSER }}
-        DBPASSWORD: ${{ secrets.DBPASSWORD }}
-        DBHOST: ${{ secrets.DBHOST }}
-        DB_PORT: ${{ secrets.DB_PORT }}
-        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
     - name: Run database migrations
       run: |
-        python manage.py migrate
-      env:
-        DJANGO_SETTINGS_MODULE: server_location_map.settings
-        DBNAME: ${{ secrets.DBNAME }}
-        DBUSER: ${{ secrets.DBUSER }}
-        DBPASSWORD: ${{ secrets.DBPASSWORD }}
-        DBHOST: ${{ secrets.DBHOST }}
-        DB_PORT: ${{ secrets.DB_PORT }}
-        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        python manage.py migrate --noinput
 
     - name: Create deployment package
       run: |
-        zip -r app.zip . -x "*.git*" -x "*.env*" -x "*.venv*" -x "*.vscode*"
+        zip -r app.zip . -x "venv/*" "*.git*" "LogFiles/*" "deployments/*" "azure_logs.zip"
 
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
@@ -65,16 +47,6 @@ jobs:
         slot-name: 'production'
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: app.zip
-        app-settings: |
-          -WEBSITES_PORT=8000
-          -PORT=8000
-          -DJANGO_SETTINGS_MODULE=server_location_map.settings
-          -DBNAME=${{ secrets.DBNAME }}
-          -DBUSER=${{ secrets.DBUSER }}
-          -DBPASSWORD=${{ secrets.DBPASSWORD }}
-          -DBHOST=${{ secrets.DBHOST }}
-          -DB_PORT=${{ secrets.DB_PORT }}
-          -GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
 
     - name: Azure logout
       if: always()
