@@ -58,17 +58,13 @@ jobs:
       run: |
         zip -r app.zip . -x "*.git*" -x "*.env*" -x "*.venv*" -x "*.vscode*"
 
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Deploy to Azure
+    - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        slot-name: 'production'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: app.zip
-        slot-name: production
         app-settings: |
           -WEBSITES_PORT=8000
           -PORT=8000
@@ -81,5 +77,6 @@ jobs:
           -GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
 
     - name: Azure logout
+      if: always()
       run: |
-        az logout 
+        az logout || true 
