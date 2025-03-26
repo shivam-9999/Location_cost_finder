@@ -5,14 +5,12 @@ set -e
 
 echo "Starting Deployment Script"
 
-# Create and activate virtual environment
-echo "Creating virtual environment..."
-python -m venv antenv
-source antenv/bin/activate
+# Activate virtual environment if it exists
+if [ -d "venv" ]; then
+    source venv/bin/activate
+fi
 
-# Upgrade pip and install requirements
-echo "Installing dependencies..."
-python -m pip install --upgrade pip
+# Install dependencies
 pip install -r requirements.txt
 
 # Collect static files
