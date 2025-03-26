@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Make script exit on error
+# Exit on error
 set -e
 
 echo "Starting Deployment Script"
@@ -14,11 +14,10 @@ echo "Forcing port to 8000 for both PORT and WEBSITES_PORT"
 export PYTHONPATH=/home/site/wwwroot/antenv/lib/python3.10/site-packages:$PYTHONPATH
 
 # Create and activate virtual environment
-python -m venv antenv
-source antenv/bin/activate
+python -m venv venv
+source venv/bin/activate
 
-# Upgrade pip and install requirements
-python -m pip install --upgrade pip
+# Install dependencies
 pip install -r requirements.txt
 
 # Print environment information
@@ -45,4 +44,4 @@ python manage.py collectstatic --noinput
 python manage.py migrate --noinput
 
 # Start Gunicorn
-gunicorn server_location_map.wsgi:application --bind=0.0.0.0:8000 
+gunicorn server_location_map.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120 
