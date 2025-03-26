@@ -39,13 +39,17 @@ python manage.py collectstatic --noinput
 # Apply database migrations
 python manage.py migrate --noinput
 
-# Start Gunicorn with proper configuration
-gunicorn server_location_map.wsgi:application \
+# Start Gunicorn in the background
+nohup gunicorn server_location_map.wsgi:application \
     --bind 0.0.0.0:8000 \
     --workers 4 \
     --timeout 120 \
-    --access-logfile - \
-    --error-logfile - \
+    --access-logfile logs/access.log \
+    --error-logfile logs/error.log \
     --log-level info \
     --capture-output \
-    --enable-stdio-inheritance 
+    --enable-stdio-inheritance \
+    --daemon
+
+# Keep the container running
+tail -f logs/access.log logs/error.log 
