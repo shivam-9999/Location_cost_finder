@@ -7,12 +7,15 @@ echo "Starting Deployment Script"
 
 # Use the PORT environment variable provided by Azure, default to 8000
 PORT="${PORT:-8000}"
-echo "Using port: $PORT"
+WEBSITES_PORT="${WEBSITES_PORT:-8000}"
+echo "Using port: $PORT (WEBSITES_PORT: $WEBSITES_PORT)"
 
 # Activate virtual environment if it exists
 if [ -d "antenv" ]; then
+    echo "Activating antenv virtual environment..."
     source antenv/bin/activate
 elif [ -d "venv" ]; then
+    echo "Activating venv virtual environment..."
     source venv/bin/activate
 fi
 
@@ -30,9 +33,10 @@ python manage.py migrate --noinput
 
 # Create log directory
 mkdir -p logs
+echo "Created logs directory"
 
 # Start Gunicorn with proper settings
-echo "Starting Gunicorn..."
+echo "Starting Gunicorn on port $PORT..."
 exec gunicorn server_location_map.wsgi:application \
     --bind=0.0.0.0:$PORT \
     --workers=4 \
