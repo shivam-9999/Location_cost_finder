@@ -12,27 +12,27 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+import urllib.parse
+from sqlalchemy import create_engine, text
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+load_dotenv()  # Load .env file
+
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+DEBUG = os.getenv('DEBUG', 'True') == 'True'  # Set debug to True for testing
 
-ALLOWED_HOSTS = [
-    'locationcostfinder.azurewebsites.net',
-    'localhost',
-    '127.0.0.1',
-    '169.254.130.1',
-    '169.254.130.4',
-    '*'  # Temporarily allow all hosts for debugging
-]
+ALLOWED_HOSTS = ['*']  # Allow all hosts for testing
 
 # Application definition
 
@@ -80,13 +80,28 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'server_location_map.wsgi.application'
 
-# Database
+# Database configuration
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': '/home/db.sqlite3',
     }
 }
+
+# Future Azure PostgreSQL configuration
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('DBNAME'),
+#         'USER': os.getenv('DBUSER'),
+#         'PASSWORD': os.getenv('DBPASSWORD'),
+#         'HOST': os.getenv('DBHOST'),
+#         'PORT': os.getenv('DB_PORT', '5432'),
+#         'OPTIONS': {
+#             'sslmode': 'require',
+#         },
+#     }
+# }
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
@@ -98,6 +113,8 @@ REST_FRAMEWORK = {
 APPEND_SLASH = False
 
 # Password validation
+# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -114,17 +131,49 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Internationalization
+# https://docs.djangoproject.com/en/5.1/topics/i18n/
+
 LANGUAGE_CODE = 'en-us'
+
 TIME_ZONE = 'UTC'
+
 USE_I18N = True
+
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-CORS_ALLOW_ALL_ORIGINS = True
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000'
+]
+
+CSRF_COOKIE_SECURE = True  # Enable secure cookie in production
+SESSION_COOKIE_SECURE = True  # Enable secure session in production
+CSRF_COOKIE_HTTPONLY = True  # Prevent JavaScript access to CSRF cookie
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
+
+if DEBUG:
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+
+# File upload settings
+FILE_UPLOAD_PERMISSIONS = 0o777  # Maximum permissions for uploaded files
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o777  # Maximum permissions for upload directories
+
+# Media files configuration
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/home/Data/uploads'

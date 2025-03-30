@@ -28,20 +28,25 @@ def haversine(lat1, lon1, lat2, lon2):
 def get_coordinates(address):
     url = "https://maps.googleapis.com/maps/api/geocode/json"
     params = {"address": address, "key": os.getenv('GOOGLE_API_KEY')}
+    
+    logger.info(f"🔍 Attempting to geocode address: {address}")
+    logger.info(f"🔑 Using API key: {os.getenv('GOOGLE_API_KEY')[:10]}...")
 
     try:
         response = requests.get(url, params=params)
         data = response.json()
-
-        if data['status'] == 'OK':
-            location = data['results'][0]['geometry']['location']
-            return location['lat'], location['lng']
-        else:
-            print(f"❗ Geocoding Error: {data['status']} - {data.get('error_message', 'No details provided')}")
+        
+        logger.info(f"📡 Geocoding API Response Status: {data.get('status')}")
+        if data.get('status') != 'OK':
+            logger.error(f"❌ Geocoding Error: {data.get('status')} - {data.get('error_message', 'No details provided')}")
             return None, None
+            
+        location = data['results'][0]['geometry']['location']
+        logger.info(f"✅ Successfully got coordinates: {location}")
+        return location['lat'], location['lng']
 
     except Exception as e:
-        print(f"❗ Exception in `get_coordinates()`: {e}")
+        logger.error(f"❌ Exception in `get_coordinates()`: {str(e)}")
         return None, None
 
 # Vision API Landmark Detection
@@ -104,10 +109,13 @@ class LocationImageSerializer(serializers.ModelSerializer):
 
         # Handle `home_address`
         home_address = validated_data.pop('home_address', "35 Davean Dr, North York, ON, Canada M2L 2R6")
+        logger.info(f"📍 Using home address: {home_address}")
+        
         home_lat, home_lng = get_coordinates(home_address)
+        logger.info(f"📍 Coordinates received: lat={home_lat}, lng={home_lng}")
 
         if not home_lat or not home_lng:
-            logger.error(f"❗ Invalid Address - {home_address}")
+            logger.error(f"❌ Invalid Address - {home_address}")
             raise serializers.ValidationError("Invalid home address. Could not fetch coordinates.")
 
         # ✅ Handle Missing `image` Gracefully
