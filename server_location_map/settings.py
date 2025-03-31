@@ -32,7 +32,12 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'  # Set debug to True for testing
 
-ALLOWED_HOSTS = ['*']  # Allow all hosts for testing
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.azurewebsites.net',
+    'locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net'
+]
 
 # Application definition
 
@@ -84,7 +89,7 @@ WSGI_APPLICATION = 'server_location_map.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/home/db.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'home', 'db.sqlite3'),  # Using relative path
     }
 }
 
@@ -177,3 +182,8 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o777  # Maximum permissions for upload dire
 # Media files configuration
 MEDIA_URL = '/media/'
 MEDIA_ROOT = '/home/Data/uploads'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
