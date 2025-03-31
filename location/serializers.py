@@ -106,6 +106,7 @@ class LocationImageSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create method for saving validated data."""
         logger.info(f"🔍 Before Create - Data Received: {validated_data}")
+        print("✅ Final validated data:", validated_data)
 
         # Handle `home_address`
         home_address = validated_data.pop('home_address', "35 Davean Dr, North York, ON, Canada M2L 2R6")
