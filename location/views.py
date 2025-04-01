@@ -5,6 +5,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from .models import LocationImage
 from .serializers import LocationImageSerializer, detect_landmark, get_coordinates, haversine
 import logging
+from django.db import connection
 logger = logging.getLogger(__name__)
 
 class LocationImageUploadView(generics.CreateAPIView):
@@ -13,16 +14,27 @@ class LocationImageUploadView(generics.CreateAPIView):
     parser_classes = (MultiPartParser, FormParser)
     
     def create(self, request, *args, **kwargs):
+        # Debug prints
+        print("\n🔄 Request Data:", request.data)
+        print("📁 Files:", request.FILES)
+        
         # ✅ Enforce `home_address` before passing to serializer
         if 'home_address' not in request.data:
             request.data['home_address'] = "35 Davean Dr, North York, ON, Canada M2L 2R6"
 
         serializer = self.get_serializer(data=request.data)
+        print("\n🔍 Before Validation - Serializer Data:", serializer.initial_data)
 
         if serializer.is_valid():
+            print("\n🔥 Serializer Validated:", serializer.validated_data)
             image_instance = serializer.save()
+            print("✅ Saved Instance:", image_instance.id)
+            print("📦 Total records now:", LocationImage.objects.count())
+            
             response_data = LocationImageSerializer(image_instance).data
             return Response(response_data, status=status.HTTP_201_CREATED)
+        
+        print("\n❌ Validation Errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -46,6 +58,7 @@ class LocationImageListCreateView(generics.ListCreateAPIView):
 
 # ✅ Retrieve (Get Details of One Image)
 class LocationImageDetailView(generics.RetrieveAPIView):
+
     queryset = LocationImage.objects.all()
     serializer_class = LocationImageSerializer
     lookup_field = 'pk'  # Ensure this matches your URL pattern

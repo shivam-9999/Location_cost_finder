@@ -15,6 +15,7 @@ import os
 from dotenv import load_dotenv
 import urllib.parse
 from sqlalchemy import create_engine, text
+import dj_database_url
 
 load_dotenv()  # Load .env file
 
@@ -86,27 +87,29 @@ TEMPLATES = [
 WSGI_APPLICATION = 'server_location_map.wsgi.application'
 
 # Database configuration
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'home', 'db.sqlite3'),  # Using relative path
-    }
-}
-
-# Future Azure PostgreSQL configuration
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('DBNAME'),
-#         'USER': os.getenv('DBUSER'),
-#         'PASSWORD': os.getenv('DBPASSWORD'),
-#         'HOST': os.getenv('DBHOST'),
-#         'PORT': os.getenv('DB_PORT', '5432'),
-#         'OPTIONS': {
-#             'sslmode': 'require',
-#         },
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'home', 'db.sqlite3'),  # Using relative path
 #     }
 # }
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'neondb',
+        'USER': 'neondb_owner',
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
+        'CONN_MAX_AGE': 0,  # Close connections after each request
+        'CONN_HEALTH_CHECKS': True,  # Enable connection health checks
+    }
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
@@ -181,9 +184,8 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o777  # Maximum permissions for upload dire
 
 # Media files configuration
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/home/Data/uploads'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
-
