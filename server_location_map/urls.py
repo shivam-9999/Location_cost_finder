@@ -13,7 +13,7 @@ from location.views import (
     SuperAdminLoginView,
     AdminLoginView
 )
-from location.auth_views import LoginView, LogoutView
+from location.auth_views import LoginView, LogoutView, LogoutAllDevicesView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 def check_superuser(request):
@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/auth/admin/login/', AdminLoginView.as_view(), name='admin-login'),
     path('api/auth/superadmin/login/', SuperAdminLoginView.as_view(), name='superadmin-login'),
     path('api/auth/logout/', LogoutView.as_view(), name='logout'),
+    path('api/auth/logout-all/', LogoutAllDevicesView.as_view(), name='logout-all'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/location/upload/', LocationImageUploadView.as_view(), name='image-upload'),
     path('images/', LocationImageListCreateView.as_view(), name='image-list'),

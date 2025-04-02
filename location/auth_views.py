@@ -5,6 +5,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.middleware.csrf import get_token
 from django.conf import settings
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from django.contrib.auth import get_user_model
+from rest_framework.permissions import IsAuthenticated
 
 class LoginView(APIView):
     permission_classes = []
@@ -68,4 +71,33 @@ class LogoutView(APIView):
         response.delete_cookie(settings.JWT_AUTH_COOKIE)
         response.delete_cookie(settings.JWT_AUTH_REFRESH_COOKIE)
         response.delete_cookie('csrftoken')
-        return response 
+        return response
+
+class LogoutAllDevicesView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            # Get the current user
+            user = request.user
+            
+            # Get all outstanding tokens for the user
+            outstanding_tokens = OutstandingToken.objects.filter(user=user)
+            
+            # Blacklist all outstanding tokens
+            for token in outstanding_tokens:
+                BlacklistedToken.objects.get_or_create(token=token)
+            
+            # Clear all cookies
+            response = Response({'message': 'Logged out from all devices successfully'})
+            response.delete_cookie(settings.JWT_AUTH_COOKIE)
+            response.delete_cookie(settings.JWT_AUTH_REFRESH_COOKIE)
+            response.delete_cookie('csrftoken')
+            
+            return response
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Error logging out from all devices: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) 
