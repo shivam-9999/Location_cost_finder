@@ -10,6 +10,9 @@ The project will allows you to upload place image, find coordniate of the place 
     “refactor: listen only to delete events”
     “doc: adds instructions to setup dev env”
 
+# to ignore file to be commmited
+    Git rm --cached filename
+    
 
 
 
