@@ -16,6 +16,9 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     postgresql-client \
+    postgresql-server-dev-all \
+    python3-dev \
+    gcc \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
