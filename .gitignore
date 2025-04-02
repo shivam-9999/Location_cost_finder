@@ -43,6 +43,9 @@ location/migrations/
 media/
 staticfiles/
 
+
+
+
 # Docker
 *.pid
 docker-compose.override.yml
@@ -61,3 +64,6 @@ htmlcov/
 .nox/
 .cache/
 home/
+server_location_map/__pycache__/settings.cpython-310.pyc
+server_location_map/__pycache__/urls.cpython-310.pyc
+server_location_map/__pycache__/wsgi.cpython-310.pyc
