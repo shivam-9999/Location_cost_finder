@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class SuperAdminLoginView(APIView):
     permission_classes = [AllowAny]
+    required_group = 'superadmin'
     
     def post(self, request):
         username = request.data.get('username')
@@ -40,16 +41,10 @@ class SuperAdminLoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
             
-        # Then check if it's the correct user and group
-        if user.username != 'superadminshivam':
+        # Check if user is in the required group
+        if not user.groups.filter(name=self.required_group).exists():
             return Response(
-                {'error': 'Invalid credentials'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-            
-        if not user.groups.filter(name='superadmin').exists():
-            return Response(
-                {'error': 'User is not in superadmin group'},
+                {'error': f'User is not in {self.required_group} group'},
                 status=status.HTTP_403_FORBIDDEN
             )
             
@@ -82,6 +77,7 @@ class SuperAdminLoginView(APIView):
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class AdminLoginView(APIView):
     permission_classes = [AllowAny]
+    required_group = 'admin'
     
     def post(self, request):
         username = request.data.get('username')
@@ -102,16 +98,10 @@ class AdminLoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
             
-        # Then check if it's the correct user and group
-        if user.username != 'adminshivam':
+        # Check if user is in the required group
+        if not user.groups.filter(name=self.required_group).exists():
             return Response(
-                {'error': 'Invalid credentials'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-            
-        if not user.groups.filter(name='admin').exists():
-            return Response(
-                {'error': 'User is not in admin group'},
+                {'error': f'User is not in {self.required_group} group'},
                 status=status.HTTP_403_FORBIDDEN
             )
             
