@@ -45,7 +45,7 @@ class CSRFCookieView(APIView):
             key='csrftoken',
             value=csrf_token,
             httponly=False,  # So JS can read and send it
-            secure=True,     # Set False in dev if not using HTTPS
+            secure=False,     # Set False in dev if not using HTTPS
             samesite='Lax'
         )
         return response
@@ -153,8 +153,8 @@ class CustomTokenRefreshView(TokenRefreshView):
                 'access_token',
                 access_token,
                 httponly=True,
+                secure=False,
                 samesite='Lax',
-                secure=True
             )
             
             return response

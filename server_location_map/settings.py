@@ -36,7 +36,6 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'  # Set debug to True for testing
 
 ALLOWED_HOSTS = [
     'localhost',
-    '127.0.0.1',
     '.azurewebsites.net',
     'locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net'
 ]
@@ -58,9 +57,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -152,14 +151,12 @@ JWT_AUTH_SAMESITE = 'Lax'
 CSRF_TRUSTED_ORIGINS = [
     'https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net',
     'http://localhost:8000',
-    'http://127.0.0.1:8000',
     "http://localhost:3000",
-
 ]
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False  # Changed to False to allow JavaScript access
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
@@ -168,9 +165,12 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://127.0.0.1:3000",
     "https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net"
 ]
+
+# Add CORS_ALLOW_ALL_ORIGINS for development
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
 
 APPEND_SLASH = False
 
