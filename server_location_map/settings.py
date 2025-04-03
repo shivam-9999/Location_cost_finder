@@ -152,7 +152,9 @@ JWT_AUTH_SAMESITE = 'Lax'
 CSRF_TRUSTED_ORIGINS = [
     'https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net',
     'http://localhost:8000',
-    'http://127.0.0.1:8000'
+    'http://127.0.0.1:8000',
+    "http://localhost:3000",
+
 ]
 
 CSRF_COOKIE_SECURE = True
