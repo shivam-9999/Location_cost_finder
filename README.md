@@ -11,8 +11,10 @@ The project will allows you to upload place image, find coordniate of the place 
     “doc: adds instructions to setup dev env”
 
 # to ignore file to be commmited
-    Git rm --cached filename
-    
+    git rm --cached filename
+
+# to restore from stage 
+    git restore --staged cookies.txt
 
 
 
