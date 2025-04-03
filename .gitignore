@@ -29,6 +29,7 @@ django-debug.log
 app_logs.txt
 
 # Virtual Environment
+cookies.txt
 venv/
 ENV/
 env/

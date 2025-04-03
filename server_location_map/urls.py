@@ -10,10 +10,17 @@ from location.views import (
     LocationImageUpdateView,
     LocationImageDeleteView,
     DeleteAllLocationImagesView,
-    SuperAdminLoginView,
-    AdminLoginView
 )
-from location.auth_views import LoginView, LogoutView, LogoutAllDevicesView
+from location.auth_views import (
+    login_view,
+    LogoutView, 
+    LogoutAllDevicesView,
+    CSRFCookieView,
+    admin_login_view,
+    superadmin_login_view,
+    reset_admin_password,
+    check_user_details
+)
 from rest_framework_simplejwt.views import TokenRefreshView
 
 def check_superuser(request):
@@ -25,9 +32,12 @@ def check_superuser(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('check-admin/', check_superuser),
-    path('api/auth/login/', LoginView.as_view(), name='login'),
-    path('api/auth/admin/login/', AdminLoginView.as_view(), name='admin-login'),
-    path('api/auth/superadmin/login/', SuperAdminLoginView.as_view(), name='superadmin-login'),
+    path('api/auth/csrf/', CSRFCookieView.as_view(), name='csrf'),
+    path('api/auth/login/', login_view, name='login'),
+    path('api/auth/admin/login/', admin_login_view, name='admin-login'),
+    path('api/auth/superadmin/login/', superadmin_login_view, name='superadmin-login'),
+    path('api/auth/admin/reset-password/', reset_admin_password, name='reset-admin-password'),
+    path('api/auth/check-user/', check_user_details, name='check-user'),
     path('api/auth/logout/', LogoutView.as_view(), name='logout'),
     path('api/auth/logout-all/', LogoutAllDevicesView.as_view(), name='logout-all'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

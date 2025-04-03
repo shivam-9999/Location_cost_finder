@@ -126,43 +126,48 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),  # Increased from 60 minutes to 24 hours
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),   # Increased from 1 day to 7 days
-    'ROTATE_REFRESH_TOKENS': True,                 # Get new refresh token with each refresh
-    'BLACKLIST_AFTER_ROTATION': True,             # Blacklist old refresh tokens
-    'UPDATE_LAST_LOGIN': True,                    # Update last login timestamp
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
     
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_DOMAIN': None,
-    'AUTH_COOKIE_SECURE': False,
+    'AUTH_COOKIE_SECURE': True,
     'AUTH_COOKIE_HTTP_ONLY': True,
     'AUTH_COOKIE_PATH': '/',
     'AUTH_COOKIE_SAMESITE': 'Lax',
-    
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-    'TOKEN_TYPE_CLAIM': 'token_type',
-    'JTI_CLAIM': 'jti',
-    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
-    
-    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
-    'SLIDING_TOKEN_LIFETIME': timedelta(hours=24),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=7),
 }
 
-# Cookie settings for JWT
+# Cookie settings
 JWT_AUTH_COOKIE = 'access_token'
 JWT_AUTH_REFRESH_COOKIE = 'refresh_token'
 JWT_AUTH_SECURE = True
 JWT_AUTH_HTTPONLY = True
 JWT_AUTH_SAMESITE = 'Lax'
 
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000'
+]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'Lax'
+
 # CORS settings
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React development server
+    "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net"  # Fixed URL without trailing slash
+    "https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net"
 ]
 
 APPEND_SLASH = False
@@ -204,22 +209,6 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# CSRF settings
-CSRF_TRUSTED_ORIGINS = [
-    'https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000'
-]
-
-CSRF_COOKIE_SECURE = True  # Enable secure cookie in production
-SESSION_COOKIE_SECURE = True  # Enable secure session in production
-CSRF_COOKIE_HTTPONLY = True  # Prevent JavaScript access to CSRF cookie
-SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
-
-if DEBUG:
-    CSRF_COOKIE_SECURE = False
-    SESSION_COOKIE_SECURE = False
 
 # File upload settings
 FILE_UPLOAD_PERMISSIONS = 0o777  # Maximum permissions for uploaded files
