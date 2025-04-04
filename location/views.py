@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from django.middleware.csrf import get_token
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from .authentication import CookieJWTAuthentication
 from .models import LocationImage
 from .serializers import LocationImageSerializer, detect_landmark, get_coordinates, haversine
 import logging
@@ -23,7 +23,7 @@ class LocationImageUploadView(generics.CreateAPIView):
     serializer_class = LocationImageSerializer
     parser_classes = (MultiPartParser, FormParser)
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     
     def create(self, request, *args, **kwargs):
         # Debug prints
@@ -56,7 +56,7 @@ class LocationImageListCreateView(generics.ListCreateAPIView):
     serializer_class = LocationImageSerializer
     parser_classes = (MultiPartParser, FormParser)
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -76,7 +76,7 @@ class LocationImageDetailView(generics.RetrieveAPIView):
     serializer_class = LocationImageSerializer
     lookup_field = 'pk'  # Ensure this matches your URL pattern
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
 
 # ✅ Update (Edit Image Details)
 class LocationImageUpdateView(generics.UpdateAPIView):
@@ -84,7 +84,7 @@ class LocationImageUpdateView(generics.UpdateAPIView):
     serializer_class = LocationImageSerializer
     lookup_field = 'pk'
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
 
     def perform_update(self, serializer):
         """Improved logic for updating records."""
@@ -102,7 +102,7 @@ class LocationImageDeleteView(generics.DestroyAPIView):
     serializer_class = LocationImageSerializer
     lookup_field = 'pk'
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     
 
 # ✅ Delete all images (Remove all Images)
@@ -110,7 +110,7 @@ class DeleteAllLocationImagesView(generics.DestroyAPIView):
     queryset = LocationImage.objects.all()
     serializer_class = LocationImageSerializer
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
 
     def delete(self, request, *args, **kwargs):
         total_images = self.get_queryset().count()
