@@ -63,22 +63,22 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <Card className="w-[350px]">
-        <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>
-            Enter your credentials to access your account
-          </CardDescription>
-        </CardHeader>
-        <Tabs defaultValue="user" className="w-full" onValueChange={(value: string) => setLoginType(value as "user" | "admin" | "superadmin")}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="user">User</TabsTrigger>
-            <TabsTrigger value="admin">Admin</TabsTrigger>
-            <TabsTrigger value="superadmin">Super Admin</TabsTrigger>
+      <Card className="w-[350px] p-0">
+        <Tabs defaultValue="user" className="w-full p-4" onValueChange={(value: string) => setLoginType(value as "user" | "admin" | "superadmin")}>
+          <TabsList className="grid w-full grid-cols-3 p-1 bg-muted rounded-t-lg">
+            <TabsTrigger value="user" className="rounded-sm">User</TabsTrigger>
+            <TabsTrigger value="admin" className="rounded-sm">Admin</TabsTrigger>
+            <TabsTrigger value="superadmin" className="rounded-sm">Super Admin</TabsTrigger>
           </TabsList>
+          <CardHeader className="pt-6 px-6">
+            <CardTitle>Login</CardTitle>
+            <CardDescription>
+              Enter your credentials to access your account
+            </CardDescription>
+          </CardHeader>
           <TabsContent value="user">
             <form onSubmit={handleSubmit}>
-              <CardContent>
+              <CardContent className="px-6">
                 <div className="grid w-full items-center gap-4">
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="username">Username</Label>
@@ -96,6 +96,7 @@ export default function LoginPage() {
                     <Input
                       id="password"
                       type="password"
+                      className="mb-5"
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -105,7 +106,7 @@ export default function LoginPage() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="flex flex-col gap-4">
+              <CardFooter className="flex flex-col gap-4 px-6 pb-6">
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Logging in..." : "Login"}
@@ -115,7 +116,7 @@ export default function LoginPage() {
           </TabsContent>
           <TabsContent value="admin">
             <form onSubmit={handleSubmit}>
-              <CardContent>
+              <CardContent className="px-6">
                 <div className="grid w-full items-center gap-4">
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="username">Username</Label>
@@ -133,8 +134,10 @@ export default function LoginPage() {
                     <Input
                       id="password"
                       type="password"
+                      className="mb-5"
                       placeholder="Enter your password"
                       value={password}
+                      
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       autoComplete="current-password"
@@ -142,7 +145,7 @@ export default function LoginPage() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="flex flex-col gap-4">
+              <CardFooter className="flex flex-col gap-4 px-6 pb-6">
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Logging in..." : "Login"}
@@ -152,7 +155,7 @@ export default function LoginPage() {
           </TabsContent>
           <TabsContent value="superadmin">
             <form onSubmit={handleSubmit}>
-              <CardContent>
+              <CardContent className="px-6">
                 <div className="grid w-full items-center gap-4">
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="username">Username</Label>
@@ -170,6 +173,7 @@ export default function LoginPage() {
                     <Input
                       id="password"
                       type="password"
+                      className="mb-5"
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -179,7 +183,7 @@ export default function LoginPage() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="flex flex-col gap-4">
+              <CardFooter className="flex flex-col gap-4 px-6 pb-6">
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Logging in..." : "Login"}
