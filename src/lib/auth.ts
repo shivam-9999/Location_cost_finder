@@ -33,31 +33,42 @@ export async function getCsrfToken() {
   }
 }
 
-export async function login(username: string, password: string) {
+export async function login(username: string, password: string, loginType: string = "user") {
   try {
-    const csrfToken = getCookie("csrftoken");
-    console.log("Using CSRF token:", csrfToken);
-
-    const res = await fetch("http://localhost:8000/api/auth/login/", {
+    // Get CSRF token first
+    const csrfToken = await getCsrfToken();
+    
+    // Determine the endpoint based on login type
+    const endpoint = loginType === "admin" 
+      ? "http://localhost:8000/api/auth/admin/login/"
+      : "http://localhost:8000/api/auth/login/";
+    
+    const response = await fetch(endpoint, {
       method: "POST",
-      credentials: "include", // very important
       headers: {
         "Content-Type": "application/json",
-        "X-CSRFToken": csrfToken || "", // Django looks for this
+        "X-CSRFToken": csrfToken,
       },
+      credentials: "include",
       body: JSON.stringify({ username, password }),
     });
 
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error?.error || "Login failed");
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Login failed");
     }
 
-    const data = await res.json();
-    console.log("✅ Login successful:", data);
-    return data; // returns user data (not tokens)
+    const data = await response.json();
+    
+    // Store user information in localStorage
+    if (data.user) {
+      localStorage.setItem("user", JSON.stringify(data.user));
+    }
+    
+    console.log("Login successful:", data);
+    return data;
   } catch (error) {
-    console.error("❌ Login error:", error);
+    console.error("Login error:", error);
     throw error;
   }
 } 
