@@ -86,7 +86,7 @@ export default function LoginPage() {
                       id="username"
                       placeholder="Enter your username"
                       value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                       required
                       autoComplete="username"
                     />
@@ -99,7 +99,7 @@ export default function LoginPage() {
                       className="mb-5"
                       placeholder="Enter your password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                       required
                       autoComplete="current-password"
                     />
