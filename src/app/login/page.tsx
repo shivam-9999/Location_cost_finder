@@ -13,70 +13,33 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getCsrfToken, login } from "@/lib/auth";
 import { toast } from "sonner";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+    
     try {
-      const response = await fetch(
-        "https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net/api/auth/login/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            username,
-            password,
-          }),
-          credentials: 'include',
-        }
-      );
-
-      const data = await response.json();
-      console.log("Login response:", data); // Debug log
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Login failed");
-      }
-
-      // Store the tokens in localStorage
-      if (data.token) {
-        localStorage.setItem("access_token", data.token);
-      } else if (data.access_token) {
-        localStorage.setItem("access_token", data.access_token);
-      } else if (data.access) {
-        localStorage.setItem("access_token", data.access);
-      } else {
-        throw new Error("No token found in response");
-      }
-
-      // Store refresh token if available
-      if (data.refresh_token) {
-        localStorage.setItem("refresh_token", data.refresh_token);
-      } else if (data.refresh) {
-        localStorage.setItem("refresh_token", data.refresh);
-      }
-
+      // First get CSRF token
+      await getCsrfToken();
+      
+      // Then attempt login
+      const data = await login(username, password);
+      console.log("Login successful:", data);
       toast.success("Login successful!");
       
-      // Ensure token is stored before navigation
-      const storedToken = localStorage.getItem("access_token");
-      if (storedToken) {
-        router.push("/dashboard");
-      } else {
-        throw new Error("Failed to store access token");
-      }
+      // Navigate to dashboard after successful login
+      router.push("/dashboard");
+      
     } catch (error) {
-      console.error("Login error:", error); // Debug log
+      console.error("Error:", error);
       toast.error(error instanceof Error ? error.message : "Login failed");
     } finally {
       setIsLoading(false);
@@ -103,6 +66,7 @@ export default function LoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
+                  autoComplete="username"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -114,6 +78,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                 />
               </div>
             </div>

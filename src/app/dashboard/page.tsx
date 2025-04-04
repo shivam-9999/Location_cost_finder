@@ -14,46 +14,64 @@ import { toast } from "sonner";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Check authentication status on component mount
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
-        const accessToken = localStorage.getItem("access_token");
-        console.log("Access token:", accessToken); // Debug log
-
-        if (!accessToken) {
-          toast.error("Please log in to access the dashboard");
-          router.push("/login");
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          // If not authenticated, redirect to login
+          router.push('/login');
           return;
         }
-
-        setIsLoading(false);
+        
+        setIsAuthenticated(true);
       } catch (error) {
         console.error("Auth check error:", error);
-        router.push("/login");
+        router.push('/login');
       }
     };
-
+    
     checkAuth();
   }, [router]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    setIsLoading(true);
     try {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      toast.success("Logged out successfully");
-      router.push("/login");
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include', // Important for cookies
+      });
+      
+      if (response.ok) {
+        toast.success("Logged out successfully");
+        router.push('/login');
+      } else {
+        const data = await response.json();
+        toast.error(data.message || "Failed to logout");
+      }
     } catch (error) {
       console.error("Logout error:", error);
-      toast.error("Error logging out");
+      toast.error("Error during logout");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (isLoading) {
+  // Show loading state while checking authentication
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <p>Loading...</p>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+          <p className="text-gray-600">Please wait while we verify your authentication.</p>
+        </div>
       </div>
     );
   }
@@ -63,8 +81,12 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
+          <Button 
+            variant="outline" 
+            onClick={handleLogout} 
+            disabled={isLoading}
+          >
+            {isLoading ? "Logging out..." : "Logout"}
           </Button>
         </div>
 
@@ -83,7 +105,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Add more cards and content for your dashboard here */}
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
