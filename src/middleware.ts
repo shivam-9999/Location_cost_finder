@@ -11,7 +11,8 @@ export function middleware(request: NextRequest) {
   // Define public paths that don't require authentication
   const isPublicPath = pathname === '/login' || pathname === '/register' || pathname === '/' || pathname === '/dashboard';
   
-  // Check if the path is for admin or user dashboard
+  // Check if the path is for superadmin, admin, or user dashboard
+  const isSuperAdminPath = pathname.startsWith('/superadmin');
   const isAdminPath = pathname.startsWith('/admin');
   const isUserPath = pathname.startsWith('/user');
   
@@ -33,8 +34,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
   
-  // If user is trying to access admin path, we'll let the admin dashboard page handle the role check
-  // If user is trying to access user path, we'll let the user dashboard page handle the role check
+  // If user is trying to access superadmin, admin, or user path, we'll let the respective dashboard pages handle the role check
   
   return NextResponse.next();
 }
@@ -43,8 +43,9 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard',
-    '/user/:path*',
+    '/superadmin/:path*',
     '/admin/:path*',
+    '/user/:path*',
     '/login',
     '/register',
     '/',

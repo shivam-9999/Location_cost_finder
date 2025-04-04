@@ -12,11 +12,14 @@ export default function DashboardRedirectPage() {
     if (userStr) {
       const user = JSON.parse(userStr);
       
-      // Check if the user is an admin
+      // Check if the user is a superadmin, admin, or regular user
+      const isSuperAdmin = user.groups && user.groups.includes("superadmin");
       const isAdmin = user.groups && user.groups.includes("admin");
       
       // Redirect to the appropriate dashboard
-      if (isAdmin) {
+      if (isSuperAdmin) {
+        router.push("/superadmin/dashboard");
+      } else if (isAdmin) {
         router.push("/admin/dashboard");
       } else {
         router.push("/user/dashboard");

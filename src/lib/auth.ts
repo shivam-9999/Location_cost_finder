@@ -39,9 +39,13 @@ export async function login(username: string, password: string, loginType: strin
     const csrfToken = await getCsrfToken();
     
     // Determine the endpoint based on login type
-    const endpoint = loginType === "admin" 
-      ? "http://localhost:8000/api/auth/admin/login/"
-      : "http://localhost:8000/api/auth/login/";
+    let endpoint = "http://localhost:8000/api/auth/login/";
+    
+    if (loginType === "admin") {
+      endpoint = "http://localhost:8000/api/auth/admin/login/";
+    } else if (loginType === "superadmin") {
+      endpoint = "http://localhost:8000/api/auth/superadmin/login/";
+    }
     
     const response = await fetch(endpoint, {
       method: "POST",
