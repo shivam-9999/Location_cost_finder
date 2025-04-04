@@ -36,6 +36,7 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'  # Set debug to True for testing
 
 ALLOWED_HOSTS = [
     'localhost',
+    '127.0.0.1',
     '.azurewebsites.net',
     'locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net'
 ]
@@ -165,6 +166,7 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net"
 ]
 
