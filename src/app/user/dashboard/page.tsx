@@ -390,6 +390,65 @@ export default function UserDashboardPage() {
     }
   };
 
+  // Add handleDelete function
+  const handleDelete = async (item: LocationData) => {
+    if (!window.confirm('Are you sure you want to delete this location?')) {
+      return;
+    }
+
+    try {
+      const csrfToken = getCookie('csrftoken');
+      if (!csrfToken) {
+        throw new Error('CSRF token not found. Please refresh the page.');
+      }
+
+      const response = await fetch(`/api/images/${item.id}/delete/`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 401) {
+          toast.error("Authentication failed. Please login again.");
+          router.push('/login');
+          return;
+        }
+
+        if (response.status === 403) {
+          toast.error("You don't have permission to delete this location.");
+          return;
+        }
+
+        if (response.status === 404) {
+          toast.error("Location not found. It may have been already deleted.");
+          // Remove the item from image history
+          setImageHistory(prevHistory => 
+            prevHistory.filter(historyItem => historyItem.id !== item.id)
+          );
+          return;
+        }
+
+        // Handle any other error
+        throw new Error(data.error || 'Failed to delete location');
+      }
+
+      // Remove the deleted item from image history
+      setImageHistory(prevHistory => 
+        prevHistory.filter(historyItem => historyItem.id !== item.id)
+      );
+      toast.success('Location deleted successfully');
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete location');
+    }
+  };
+
   // Show loading state while checking authentication
   if (!isAuthenticated) {
     return (
@@ -557,47 +616,56 @@ export default function UserDashboardPage() {
                   <CardHeader>
                     <div className="flex justify-between items-center">
                       <CardTitle className="text-lg">Location #{item.id}</CardTitle>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEditingItem(item);
-                              setEditAddress(item.Address);
-                            }}
-                          >
-                            Edit
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Edit Location</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                              <Label>Current Address</Label>
-                              <p className="text-sm text-gray-500">{item.Address}</p>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="edit-address">New Address</Label>
-                              <Input
-                                id="edit-address"
-                                value={editAddress}
-                                onChange={(e) => setEditAddress(e.target.value)}
-                                placeholder="Enter new address"
-                              />
-                            </div>
+                      <div className="flex gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
                             <Button
-                              className="w-full"
-                              onClick={() => handleEdit(item)}
-                              disabled={isEditing || !editAddress.trim()}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingItem(item);
+                                setEditAddress(item.Address);
+                              }}
                             >
-                              {isEditing ? "Updating..." : "Update Address"}
+                              Edit
                             </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Location</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                              <div className="space-y-2">
+                                <Label>Current Address</Label>
+                                <p className="text-sm text-gray-500">{item.Address}</p>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="edit-address">New Address</Label>
+                                <Input
+                                  id="edit-address"
+                                  value={editAddress}
+                                  onChange={(e) => setEditAddress(e.target.value)}
+                                  placeholder="Enter new address"
+                                />
+                              </div>
+                              <Button
+                                className="w-full"
+                                onClick={() => handleEdit(item)}
+                                disabled={isEditing || !editAddress.trim()}
+                              >
+                                {isEditing ? "Updating..." : "Update Address"}
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(item)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
