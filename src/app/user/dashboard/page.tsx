@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface LocationData {
   id: number;
@@ -40,6 +41,9 @@ export default function UserDashboardPage() {
   const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [imageHistory, setImageHistory] = useState<LocationData[]>([]);
+  const [editingItem, setEditingItem] = useState<LocationData | null>(null);
+  const [editAddress, setEditAddress] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   // Fetch image history
   const fetchImageHistory = async () => {
@@ -319,6 +323,73 @@ export default function UserDashboardPage() {
     toast.success("Results cleared successfully");
   };
 
+  // Add handleEdit function
+  const handleEdit = async (item: LocationData) => {
+    setIsEditing(true);
+    try {
+      const formData = new FormData();
+      formData.append('home_address', editAddress.trim());
+
+      const csrfToken = getCookie('csrftoken');
+      if (!csrfToken) {
+        throw new Error('CSRF token not found. Please refresh the page.');
+      }
+
+      const response = await fetch(`/api/images/${item.id}/edit/`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 401) {
+          toast.error("Authentication failed. Please login again.");
+          router.push('/login');
+          return;
+        }
+
+        if (response.status === 403) {
+          toast.error("You don't have permission to edit this location.");
+          return;
+        }
+
+        if (response.status === 404) {
+          toast.error("Location not found. It may have been deleted.");
+          // Remove the item from image history
+          setImageHistory(prevHistory => 
+            prevHistory.filter(historyItem => historyItem.id !== item.id)
+          );
+          return;
+        }
+
+        // Handle any other error
+        throw new Error(data.error || 'Failed to edit location');
+      }
+
+      // Update the image history with the edited item
+      setImageHistory(prevHistory =>
+        prevHistory.map(historyItem =>
+          historyItem.id === item.id ? data : historyItem
+        )
+      );
+
+      toast.success('Location updated successfully');
+      setEditingItem(null);
+      setEditAddress("");
+    } catch (error) {
+      console.error('Edit error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update location');
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
   // Show loading state while checking authentication
   if (!isAuthenticated) {
     return (
@@ -484,7 +555,50 @@ export default function UserDashboardPage() {
               {imageHistory.map((item) => (
                 <Card key={item.id}>
                   <CardHeader>
-                    <CardTitle className="text-lg">Location #{item.id}</CardTitle>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-lg">Location #{item.id}</CardTitle>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingItem(item);
+                              setEditAddress(item.Address);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Edit Location</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label>Current Address</Label>
+                              <p className="text-sm text-gray-500">{item.Address}</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="edit-address">New Address</Label>
+                              <Input
+                                id="edit-address"
+                                value={editAddress}
+                                onChange={(e) => setEditAddress(e.target.value)}
+                                placeholder="Enter new address"
+                              />
+                            </div>
+                            <Button
+                              className="w-full"
+                              onClick={() => handleEdit(item)}
+                              disabled={isEditing || !editAddress.trim()}
+                            >
+                              {isEditing ? "Updating..." : "Update Address"}
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="border-2 border-dotted border-gray-300 rounded-lg p-2">
