@@ -39,6 +39,56 @@ export default function UserDashboardPage() {
   const [homeAddress, setHomeAddress] = useState("");
   const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [imageHistory, setImageHistory] = useState<LocationData[]>([]);
+
+  // Fetch image history
+  const fetchImageHistory = async () => {
+    try {
+      const csrfToken = getCookie('csrftoken');
+      
+      if (!csrfToken) {
+        throw new Error('CSRF token not found. Please refresh the page.');
+      }
+
+      const response = await fetch('/api/images', {
+        method: 'GET',
+        credentials: 'include', // This ensures HttpOnly cookies are sent
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast.error("Authentication failed. Please login again.");
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to fetch image history');
+      }
+      
+      const data = await response.json();
+      console.log("Fetched image history:", data); // Debug log
+      setImageHistory(data);
+    } catch (error) {
+      console.error('Error fetching image history:', error);
+      toast.error('Failed to load image history');
+    }
+  };
+
+  // Load image history when component mounts
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchImageHistory();
+    }
+  }, [isAuthenticated]);
+
+  // Refresh image history after successful upload
+  useEffect(() => {
+    if (locationData) {
+      fetchImageHistory();
+    }
+  }, [locationData]);
 
   // Load location data from localStorage on component mount
   useEffect(() => {
@@ -425,6 +475,55 @@ export default function UserDashboardPage() {
                 </CardContent>
               </Card>
             )}
+          </div>
+
+          {/* Image History Section */}
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Image History</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {imageHistory.map((item) => (
+                <Card key={item.id}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Location #{item.id}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="border-2 border-dotted border-gray-300 rounded-lg p-2">
+                      <div className="flex justify-center">
+                        <img 
+                          src={getCompleteImageUrl(item.Image_URL)} 
+                          alt={`Location ${item.id}`} 
+                          className="max-w-[300px] max-h-[200px] w-full object-contain rounded-lg shadow-sm" 
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <Label>Address</Label>
+                        <p className="text-gray-700 text-sm">{item.Address}</p>
+                      </div>
+                      <div>
+                        <Label>Landmark</Label>
+                        <p className="text-gray-700 text-sm">{item.Landmark}</p>
+                      </div>
+                      <div>
+                        <Label>Coordinates</Label>
+                        <p className="text-gray-700 text-sm">{item.Coordinates}</p>
+                      </div>
+                      <div>
+                        <Label>Confidence Score</Label>
+                        <p className="text-gray-700 text-sm">{item["Confidence Score"]}</p>
+                      </div>
+                      {item["Distance (Haversine Formula)"] && (
+                        <div>
+                          <Label>Distance from Home</Label>
+                          <p className="text-gray-700 text-sm">{item["Distance (Haversine Formula)"]}</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </div>
