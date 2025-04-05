@@ -220,7 +220,7 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o777  # Maximum permissions for upload dire
 
 # Media files configuration
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
+MEDIA_ROOT = BASE_DIR / 'media'  # Changed from 'uploads' to 'media' and using pathlib
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',

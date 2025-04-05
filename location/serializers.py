@@ -109,7 +109,7 @@ class LocationImageSerializer(serializers.ModelSerializer):
         print("✅ Final validated data:", validated_data)
 
         # Handle `home_address`
-        home_address = validated_data.pop('home_address', "35 Davean Dr, North York, ON, Canada M2L 2R6")
+        home_address = validated_data.pop('home_address', "Davean Dr, North York, ON, Canada M2L 2R6")
         logger.info(f"📍 Using home address: {home_address}")
         
         home_lat, home_lng = get_coordinates(home_address)
@@ -234,5 +234,6 @@ class LocationImageSerializer(serializers.ModelSerializer):
             "Landmark": landmark_data["landmark_name"] if landmark_data else "Unknown",
             "Confidence Score": f"{landmark_data['confidence_score']}%" if landmark_data else "0.0%",
             "Coordinates": f"{landmark_data['landmark_lat']}, {landmark_data['landmark_lng']}" if landmark_data else "0.0, 0.0",
-            "Distance (Haversine Formula)": f"{instance.distance_km} km"
+            "Distance (Haversine Formula)": f"{instance.distance_km} km",
+            "Image_URL": instance.image.url  # Include image URL in the response
         }

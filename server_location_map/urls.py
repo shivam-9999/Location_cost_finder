@@ -22,6 +22,8 @@ from location.auth_views import (
     check_user_details
 )
 from rest_framework_simplejwt.views import TokenRefreshView
+from django.conf import settings
+from django.conf.urls.static import static
 
 def check_superuser(request):
     User = get_user_model()
@@ -47,4 +49,4 @@ urlpatterns = [
     path('images/<int:pk>/edit/', LocationImageUpdateView.as_view(), name='image-edit'),
     path('images/<int:pk>/delete/', LocationImageDeleteView.as_view(), name='image-delete'),
     path('images/delete-all/', DeleteAllLocationImagesView.as_view(), name='delete-all-images'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

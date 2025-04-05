@@ -1,9 +1,17 @@
 import hashlib
 from django.db import models
+from django.utils.text import slugify
+import os
+from datetime import datetime
 
 def upload_to(instance, filename):
-    "Define image upload path"
-    return f'uploads/{filename}'
+    """Define image upload path"""
+    # Get the file extension
+    ext = filename.split('.')[-1]
+    # Create a clean filename using current timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    clean_name = f'location_image_{timestamp}.{ext}'
+    return clean_name
 
 class LocationImage(models.Model):
     id = models.AutoField(primary_key=True)
