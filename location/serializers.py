@@ -159,32 +159,29 @@ class LocationImageSerializer(serializers.ModelSerializer):
         if 'home_address' in validated_data:
             home_address = validated_data['home_address']
 
-            # ✅ Check if an entry with the same `home_address` + `image_hash` exists
-            existing_record = LocationImage.objects.filter(
-                home_address=home_address,
-                image_hash=instance.image_hash
-            ).first()
+            # Get new coordinates for the updated address
+            home_lat, home_lng = get_coordinates(home_address)
 
-            if existing_record:
-                # ✅ Retrieve saved data instead of recalculating
-                instance.latitude = existing_record.latitude
-                instance.longitude = existing_record.longitude
-                instance.distance_km = existing_record.distance_km
-                logger.info(f"✅ [RETRIEVED] Existing data reused for Address: {home_address}")
-            else:
-                # If no matching record, proceed with recalculation
-                home_lat, home_lng = get_coordinates(home_address)
-
-                if home_lat and home_lng:
-                    instance.latitude = home_lat
-                    instance.longitude = home_lng
-                    instance.home_address = home_address
-                    logger.info(f"✅ [ADDRESS UPDATE] Address updated to: {home_address}")
+            if home_lat and home_lng:
+                instance.latitude = home_lat
+                instance.longitude = home_lng
+                instance.home_address = home_address
+                
+                # Recalculate distance with the new coordinates
+                landmark_data = detect_landmark(instance.image)
+                if landmark_data:
+                    landmark_lat = landmark_data['landmark_lat']
+                    landmark_lng = landmark_data['landmark_lng']
+                    instance.distance_km = haversine(home_lat, home_lng, landmark_lat, landmark_lng)
                 else:
-                    logger.error(f"❗ [ERROR] Invalid address provided: {home_address}")
-                    raise serializers.ValidationError({
-                        "home_address": "Invalid home address. Could not fetch coordinates."
-                    })
+                    instance.distance_km = 0.0
+                    
+                logger.info(f"✅ [ADDRESS UPDATE] Address updated to: {home_address} and distance recalculated")
+            else:
+                logger.error(f"❗ [ERROR] Invalid address provided: {home_address}")
+                raise serializers.ValidationError({
+                    "home_address": "Invalid home address. Could not fetch coordinates."
+                })
 
         # Handle `image` updates (Optional in PUT requests)
         new_image = validated_data.get('image')
@@ -203,7 +200,7 @@ class LocationImageSerializer(serializers.ModelSerializer):
             instance.image_hash = new_image_hash
             logger.info(f"✅ [IMAGE UPDATE] Image updated successfully for Image ID: {instance.id}")
 
-            # Landmark detection logic
+            # Landmark detection and distance calculation for new image
             landmark_data = detect_landmark(new_image)
             if landmark_data:
                 landmark_lat = landmark_data['landmark_lat']
