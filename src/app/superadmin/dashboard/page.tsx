@@ -3,12 +3,116 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+interface LocationData {
+  id: number;
+  Address: string;
+  Latitude: number;
+  Longitude: number;
+  Landmark: string;
+  "Confidence Score": string;
+  Coordinates: string;
+  "Distance (Haversine Formula)": string;
+  "Image_URL": string;
+}
+
+// Add this function to get the complete image URL
+const getCompleteImageUrl = (imageUrl: string) => {
+  // Check if the URL is already absolute
+  if (imageUrl.startsWith('http')) {
+    return imageUrl;
+  }
+  // Add the Django backend URL
+  return `http://127.0.0.1:8000${imageUrl}`;
+};
 
 export default function SuperAdminDashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [homeAddress, setHomeAddress] = useState("");
+  const [locationData, setLocationData] = useState<LocationData | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageHistory, setImageHistory] = useState<LocationData[]>([]);
+  const [editingItem, setEditingItem] = useState<LocationData | null>(null);
+  const [editAddress, setEditAddress] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Fetch image history
+  const fetchImageHistory = async () => {
+    try {
+      const csrfToken = getCookie('csrftoken');
+      
+      if (!csrfToken) {
+        throw new Error('CSRF token not found. Please refresh the page.');
+      }
+
+      const response = await fetch('/api/images', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast.error("Authentication failed. Please login again.");
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to fetch image history');
+      }
+      
+      const data = await response.json();
+      console.log("Fetched image history:", data);
+      setImageHistory(data);
+    } catch (error) {
+      console.error('Error fetching image history:', error);
+      toast.error('Failed to load image history');
+    }
+  };
+
+  // Load image history when component mounts
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchImageHistory();
+    }
+  }, [isAuthenticated]);
+
+  // Refresh image history after successful upload
+  useEffect(() => {
+    if (locationData) {
+      fetchImageHistory();
+    }
+  }, [locationData]);
+
+  // Load location data from localStorage on component mount
+  useEffect(() => {
+    const savedLocationData = localStorage.getItem('superadminLocationData');
+    if (savedLocationData) {
+      try {
+        setLocationData(JSON.parse(savedLocationData));
+      } catch (error) {
+        console.error('Error parsing saved location data:', error);
+        localStorage.removeItem('superadminLocationData');
+      }
+    }
+  }, []);
+
+  // Save location data to localStorage whenever it changes
+  useEffect(() => {
+    if (locationData) {
+      localStorage.setItem('superadminLocationData', JSON.stringify(locationData));
+    }
+  }, [locationData]);
 
   // Check authentication status on component mount
   useEffect(() => {
@@ -19,30 +123,24 @@ export default function SuperAdminDashboardPage() {
         });
         
         if (!response.ok) {
-          // If not authenticated, redirect to login
           router.push('/login');
           return;
         }
         
         const data = await response.json();
         setIsAuthenticated(true);
-        
+
         // Get user information from localStorage
         const userStr = localStorage.getItem("user");
         if (userStr) {
           const user = JSON.parse(userStr);
           setUsername(user.username);
           
-          // Verify that the user is actually a superadmin
+          // Verify that the user is a superadmin
           const isSuperAdmin = user.groups && user.groups.includes("superadmin");
           if (!isSuperAdmin) {
-            // If not a superadmin, redirect to appropriate dashboard
-            const isAdmin = user.groups && user.groups.includes("admin");
-            if (isAdmin) {
-              router.push('/admin/dashboard');
-            } else {
-              router.push('/user/dashboard');
-            }
+            router.push('/user/dashboard');
+            return;
           }
         }
       } catch (error) {
@@ -59,12 +157,13 @@ export default function SuperAdminDashboardPage() {
     try {
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
-        credentials: 'include', // Important for cookies
+        credentials: 'include',
       });
       
       if (response.ok) {
-        // Clear user information from localStorage
         localStorage.removeItem("user");
+        localStorage.removeItem("superadminLocationData");
+        setLocationData(null);
         
         toast.success("Logged out successfully");
         router.push('/login');
@@ -80,7 +179,229 @@ export default function SuperAdminDashboardPage() {
     }
   };
 
-  // Show loading state while checking authentication
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const validTypes = ['image/png', 'image/jpeg', 'image/bmp', 'image/tiff'];
+      
+      if (!validTypes.includes(file.type)) {
+        toast.error("Please upload a valid image file (PNG, JPEG, BMP, TIFF)");
+        return;
+      }
+      
+      setSelectedImage(file);
+    }
+  };
+
+  const getCookie = (name: string): string | undefined => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift();
+    return undefined;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedImage) {
+      toast.error("Please select an image to upload");
+      return;
+    }
+    
+    setIsUploading(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('image', selectedImage);
+      if (homeAddress.trim()) {
+        formData.append('home_address', homeAddress.trim());
+      }
+      
+      const csrfToken = getCookie('csrftoken');
+      
+      if (!csrfToken) {
+        throw new Error('CSRF token not found. Please refresh the page.');
+      }
+
+      let response;
+      try {
+        response = await fetch('/api/location/upload/', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'X-CSRFToken': csrfToken,
+          },
+          body: formData,
+        });
+      } catch (error) {
+        console.error("Network error during fetch:", error);
+        toast.error("Network error. Please check your connection and try again.");
+        setIsUploading(false);
+        return;
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        if (response.status === 401) {
+          toast.error("Authentication failed. Please login again.");
+          router.push('/login');
+          return;
+        }
+        
+        if (response.status === 404) {
+          toast.error("API endpoint not found. Please check the server configuration.");
+          return;
+        }
+        
+        throw new Error(
+          errorData?.detail || 
+          `Upload failed with status ${response.status}`
+        );
+      }
+      
+      const data = await response.json();
+      setLocationData(data);
+      toast.success("Location found successfully!");
+      
+      // Clear the form
+      setSelectedImage(null);
+      setHomeAddress("");
+      
+      // Reset the file input
+      const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to process image");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleClearResults = () => {
+    setLocationData(null);
+    localStorage.removeItem('superadminLocationData');
+    toast.success("Results cleared successfully");
+  };
+
+  const handleEdit = async (item: LocationData) => {
+    setIsEditing(true);
+    try {
+      const formData = new FormData();
+      formData.append('home_address', editAddress.trim());
+
+      const csrfToken = getCookie('csrftoken');
+      if (!csrfToken) {
+        throw new Error('CSRF token not found. Please refresh the page.');
+      }
+
+      const response = await fetch(`/api/images/${item.id}/edit/`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast.error("Authentication failed. Please login again.");
+          router.push('/login');
+          return;
+        }
+
+        if (response.status === 403) {
+          toast.error("You don't have permission to edit this location.");
+          return;
+        }
+
+        if (response.status === 404) {
+          toast.error("Location not found. It may have been deleted.");
+          setImageHistory(prevHistory => 
+            prevHistory.filter(historyItem => historyItem.id !== item.id)
+          );
+          return;
+        }
+
+        throw new Error(data.error || 'Failed to edit location');
+      }
+
+      setImageHistory(prevHistory =>
+        prevHistory.map(historyItem =>
+          historyItem.id === item.id ? data : historyItem
+        )
+      );
+
+      toast.success('Location updated successfully');
+      setEditingItem(null);
+      setEditAddress("");
+    } catch (error) {
+      console.error('Edit error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update location');
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const handleDelete = async (item: LocationData) => {
+    if (!window.confirm('Are you sure you want to delete this location?')) {
+      return;
+    }
+
+    try {
+      const csrfToken = getCookie('csrftoken');
+      if (!csrfToken) {
+        throw new Error('CSRF token not found. Please refresh the page.');
+      }
+
+      const response = await fetch(`/api/images/${item.id}/delete/`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast.error("Authentication failed. Please login again.");
+          router.push('/login');
+          return;
+        }
+
+        if (response.status === 403) {
+          toast.error("You don't have permission to delete this location.");
+          return;
+        }
+
+        if (response.status === 404) {
+          toast.error("Location not found. It may have been already deleted.");
+          setImageHistory(prevHistory => 
+            prevHistory.filter(historyItem => historyItem.id !== item.id)
+          );
+          return;
+        }
+
+        throw new Error(data.error || 'Failed to delete location');
+      }
+
+      setImageHistory(prevHistory => 
+        prevHistory.filter(historyItem => historyItem.id !== item.id)
+      );
+      toast.success('Location deleted successfully');
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete location');
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -107,31 +428,231 @@ export default function SuperAdminDashboardPage() {
               Logout
             </button>
           </div>
-          
+          <p className="text-sm my-4 text-gray-500">{typeof window !== 'undefined' ? window.location.pathname : ''}</p>
+
           {/* Welcome message for superadmin */}
           <div className="bg-white shadow rounded-lg p-6 mb-6">
             <p className="text-lg text-gray-700">
-              You are in the super admin panel. Welcome, {username}!
+              Welcome, Super Admin {username}!
             </p>
           </div>
           
-          {/* Superadmin dashboard content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">System Administration</h2>
-              <p className="text-gray-600">Manage system-wide settings, configurations, and global policies.</p>
-            </div>
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">User Management</h2>
-              <p className="text-gray-600">Manage all users, including admins and regular users.</p>
-            </div>
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Security Settings</h2>
-              <p className="text-gray-600">Configure security policies, authentication methods, and access controls.</p>
-            </div>
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Audit Logs</h2>
-              <p className="text-gray-600">View and analyze system activity logs and user actions.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Find Location from Image</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="image">Upload Image</Label>
+                    <div className="flex items-center justify-center w-full">
+                      <label
+                        htmlFor="image-upload"
+                        className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                      >
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                          </svg>
+                          <p className="mb-2 text-sm text-gray-500">
+                            <span className="font-semibold">Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-xs text-gray-500">PNG, JPEG, BMP, TIFF</p>
+                          {selectedImage && (
+                            <p className="text-sm text-blue-500 mt-2">
+                              Selected: {selectedImage.name}
+                            </p>
+                          )}
+                        </div>
+                        <input
+                          id="image-upload"
+                          type="file"
+                          className="hidden"
+                          onChange={handleImageChange}
+                          accept=".png,.jpg,.jpeg,.bmp,.tiff"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="home_address">Home Address (Optional)</Label>
+                    <Input
+                      id="home_address"
+                      placeholder="Enter your home address"
+                      value={homeAddress}
+                      onChange={(e) => setHomeAddress(e.target.value)}
+                    />
+                  </div>
+                  
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={!selectedImage || isUploading}
+                  >
+                    {isUploading ? "Processing..." : "Find Location"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+            
+            {locationData && (
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Location Results</CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearResults}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Clear Results
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="border-2 border-dotted border-gray-300 rounded-lg">
+                    {locationData["Image_URL"] && (
+                      <div className="col-span-2">
+                        <div className="flex justify-center">
+                          <img 
+                            src={getCompleteImageUrl(locationData["Image_URL"])} 
+                            alt="Location Image" 
+                            className="max-w-[1000px] max-h-[300px] w-full object-contain rounded-lg shadow-sm" 
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Address</Label>
+                      <p className="text-gray-700">{locationData.Address}</p>
+                    </div>
+                    <div>
+                      <Label>Landmark</Label>
+                      <p className="text-gray-700">{locationData.Landmark}</p>
+                    </div>
+                    <div>
+                      <Label>Coordinates</Label>
+                      <p className="text-gray-700">{locationData.Coordinates}</p>
+                    </div>
+                    <div>
+                      <Label>Confidence Score</Label>
+                      <p className="text-gray-700">{locationData["Confidence Score"]}</p>
+                    </div>
+                    {locationData["Distance (Haversine Formula)"] && (
+                      <div className="col-span-2">
+                        <Label>Distance from Home</Label>
+                        <p className="text-gray-700">{locationData["Distance (Haversine Formula)"]}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Image History Section */}
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">All Users Image History</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {imageHistory.map((item) => (
+                <Card key={item.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-lg">Location #{item.id}</CardTitle>
+                      <div className="flex gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingItem(item);
+                                setEditAddress(item.Address);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Location</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                              <div className="space-y-2">
+                                <Label>Current Address</Label>
+                                <p className="text-sm text-gray-500">{item.Address}</p>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="edit-address">New Address</Label>
+                                <Input
+                                  id="edit-address"
+                                  value={editAddress}
+                                  onChange={(e) => setEditAddress(e.target.value)}
+                                  placeholder="Enter new address"
+                                />
+                              </div>
+                              <Button
+                                className="w-full"
+                                onClick={() => handleEdit(item)}
+                                disabled={isEditing || !editAddress.trim()}
+                              >
+                                {isEditing ? "Updating..." : "Update Address"}
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(item)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="border-2 border-dotted border-gray-300 rounded-lg p-2">
+                      <div className="flex justify-center">
+                        <img 
+                          src={getCompleteImageUrl(item.Image_URL)} 
+                          alt={`Location ${item.id}`} 
+                          className="max-w-[300px] max-h-[200px] w-full object-contain rounded-lg shadow-sm" 
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <Label>Address</Label>
+                        <p className="text-gray-700 text-sm">{item.Address}</p>
+                      </div>
+                      <div>
+                        <Label>Landmark</Label>
+                        <p className="text-gray-700 text-sm">{item.Landmark}</p>
+                      </div>
+                      <div>
+                        <Label>Coordinates</Label>
+                        <p className="text-gray-700 text-sm">{item.Coordinates}</p>
+                      </div>
+                      <div>
+                        <Label>Confidence Score</Label>
+                        <p className="text-gray-700 text-sm">{item["Confidence Score"]}</p>
+                      </div>
+                      {item["Distance (Haversine Formula)"] && (
+                        <div>
+                          <Label>Distance from Home</Label>
+                          <p className="text-gray-700 text-sm">{item["Distance (Haversine Formula)"]}</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </div>
