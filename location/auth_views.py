@@ -68,6 +68,13 @@ def login_view(request):
     if user is None:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
+    # Prevent admin and superadmin users from using this endpoint
+    if user.is_superuser or user.is_staff or user.groups.filter(name='admin').exists():
+        return Response(
+            {'error': 'Please use the appropriate admin or superadmin login endpoint'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
     refresh = RefreshToken.for_user(user)
     access = str(refresh.access_token)
 
