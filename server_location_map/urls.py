@@ -13,6 +13,7 @@ from location.views import (
 )
 from location.auth_views import (
     login_view,
+    signup_view,
     LogoutView, 
     LogoutAllDevicesView,
     CSRFCookieView,
@@ -35,6 +36,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('check-admin/', check_superuser),
     path('api/auth/csrf/', CSRFCookieView.as_view(), name='csrf'),
+    path('api/auth/signup/', signup_view, name='signup'),
     path('api/auth/login/', login_view, name='login'),
     path('api/auth/admin/login/', admin_login_view, name='admin-login'),
     path('api/auth/superadmin/login/', superadmin_login_view, name='superadmin-login'),

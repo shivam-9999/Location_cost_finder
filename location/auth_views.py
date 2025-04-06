@@ -18,6 +18,8 @@ from rest_framework_simplejwt.settings import api_settings
 from django.middleware.csrf import CsrfViewMiddleware
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
+from django.contrib.auth.models import Group
+import re
 
 class CookieJWTAuthentication(JWTAuthentication):
     def authenticate(self, request):
@@ -330,4 +332,101 @@ def check_user_details(request):
             'username': username,
             'exists': False,
             'message': 'User not found'
-        }) 
+        })
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def signup_view(request):
+    # Check if CSRF token exists in cookies
+    csrf_token = request.COOKIES.get('csrftoken')
+    if not csrf_token:
+        return Response(
+            {'error': 'CSRF token not found. Please get a CSRF token first.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    username = request.data.get('username')
+    password = request.data.get('password')
+    email = request.data.get('email', '').strip()  # Make email optional
+
+    if not username or not password:
+        return Response(
+            {'error': 'Username and password are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Username validation
+    if len(username) < 3:
+        return Response(
+            {'error': 'Username must be at least 3 characters long'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Password validation
+    if len(password) < 6:
+        return Response(
+            {'error': 'Password must be at least 6 characters long'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Email validation (if provided)
+    if email:
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, email):
+            return Response(
+                {'error': 'Invalid email format'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    # Check if username already exists
+    User = get_user_model()
+    if User.objects.filter(username=username).exists():
+        return Response(
+            {'error': 'Username already exists'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Check if email already exists (if provided)
+    if email and User.objects.filter(email=email).exists():
+        return Response(
+            {'error': 'Email already registered'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        # Create new user
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            email=email if email else None  # Set email to None if not provided
+        )
+
+        # Add user to 'user' group
+        user_group, created = Group.objects.get_or_create(name='user')
+        user.groups.add(user_group)
+
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        access = str(refresh.access_token)
+
+        response = Response({
+            'message': 'User created successfully',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email if user.email else '',
+                'groups': list(user.groups.values_list('name', flat=True))
+            }
+        })
+
+        # Set cookies
+        response.set_cookie('access_token', access, httponly=True, secure=True, samesite='Lax')
+        response.set_cookie('refresh_token', str(refresh), httponly=True, secure=True, samesite='Lax')
+
+        return response
+
+    except Exception as e:
+        return Response(
+            {'error': f'Error creating user: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        ) 
