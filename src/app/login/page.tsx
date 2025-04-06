@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { getCsrfToken, login } from "@/lib/auth";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -111,6 +112,12 @@ export default function LoginPage() {
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
+                <p className="text-sm text-center text-gray-500">
+                  Don't have an account?{" "}
+                  <Link href="/signup" className="text-blue-500 hover:underline">
+                    Sign up
+                  </Link>
+                </p>
               </CardFooter>
             </form>
           </TabsContent>
@@ -150,6 +157,12 @@ export default function LoginPage() {
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
+                <p className="text-sm text-center text-gray-500">
+                  Don't have an account?{" "}
+                  <Link href="/signup" className="text-blue-500 hover:underline">
+                    Sign up
+                  </Link>
+                </p>
               </CardFooter>
             </form>
           </TabsContent>
@@ -188,6 +201,12 @@ export default function LoginPage() {
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
+                <p className="text-sm text-center text-gray-500">
+                  Don't have an account?{" "}
+                  <Link href="/signup" className="text-blue-500 hover:underline">
+                    Sign up
+                  </Link>
+                </p>
               </CardFooter>
             </form>
           </TabsContent>

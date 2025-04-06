@@ -129,7 +129,7 @@ export default function SuperAdminDashboardPage() {
         
         const data = await response.json();
         setIsAuthenticated(true);
-
+        
         // Get user information from localStorage
         const userStr = localStorage.getItem("user");
         if (userStr) {
@@ -139,7 +139,7 @@ export default function SuperAdminDashboardPage() {
           // Verify that the user is a superadmin
           const isSuperAdmin = user.groups && user.groups.includes("superadmin");
           if (!isSuperAdmin) {
-            router.push('/user/dashboard');
+              router.push('/user/dashboard');
             return;
           }
         }
@@ -429,7 +429,7 @@ export default function SuperAdminDashboardPage() {
             </button>
           </div>
           <p className="text-sm my-4 text-gray-500">{typeof window !== 'undefined' ? window.location.pathname : ''}</p>
-
+          
           {/* Welcome message for superadmin */}
           <div className="bg-white shadow rounded-lg p-6 mb-6">
             <p className="text-lg text-gray-700">
@@ -642,14 +642,14 @@ export default function SuperAdminDashboardPage() {
                       <div>
                         <Label>Confidence Score</Label>
                         <p className="text-gray-700 text-sm">{item["Confidence Score"]}</p>
-                      </div>
+            </div>
                       {item["Distance (Haversine Formula)"] && (
                         <div>
                           <Label>Distance from Home</Label>
                           <p className="text-gray-700 text-sm">{item["Distance (Haversine Formula)"]}</p>
-                        </div>
+            </div>
                       )}
-                    </div>
+            </div>
                   </CardContent>
                 </Card>
               ))}
