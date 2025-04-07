@@ -120,3 +120,53 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom Toast Styling */
+.custom-toast-error [data-sonner-toast] {
+  background-color: #9e2a2b !important;
+  color: white !important;
+  border: none !important;
+  font-weight: 500 !important;
+}
+
+.custom-toast-permission [data-sonner-toast] {
+  background-color: #9e2a2b !important;
+  color: white !important;
+  border: none !important;
+  font-weight: 500 !important;
+}
+
+.custom-toast-success [data-sonner-toast] {
+  background-color: #10B981 !important;
+  color: white !important;
+  border: none !important;
+  font-weight: 500 !important;
+}
+
+/* Ensure toast text is properly colored */
+.custom-toast-error [data-sonner-toast] div,
+.custom-toast-permission [data-sonner-toast] div,
+.custom-toast-success [data-sonner-toast] div,
+.custom-toast-error [data-sonner-toast] span,
+.custom-toast-permission [data-sonner-toast] span,
+.custom-toast-success [data-sonner-toast] span,
+.custom-toast-error [data-sonner-toast] p,
+.custom-toast-permission [data-sonner-toast] p,
+.custom-toast-success [data-sonner-toast] p {
+  color: white !important;
+}
+
+/* Override sonner toast styles directly */
+[data-sonner-toast][data-styled="true"].toast-error {
+  background: #9e2a2b !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(158, 42, 43, 0.4) !important;
+}
+
+[data-sonner-toast][data-styled="true"].toast-success {
+  background: #10B981 !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4) !important;
+}

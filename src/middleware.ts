@@ -3,21 +3,29 @@ import type { NextRequest } from 'next/server';
 
 // This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
   
   // Get the token from cookies
   const token = request.cookies.get('access_token');
   
+  // Check if we're coming from signup (will have a fromSignup parameter)
+  const fromSignup = searchParams.get('fromSignup') === 'true';
+  
   // Define public paths that don't require authentication
-  const isPublicPath = pathname === '/login' || pathname === '/register' || pathname === '/' || pathname === '/dashboard';
+  const isPublicPath = pathname === '/login' || 
+                      pathname === '/user/signup' || 
+                      pathname === '/admin/signup' || 
+                      pathname === '/' || 
+                      pathname === '/dashboard';
   
   // Check if the path is for superadmin, admin, or user dashboard
   const isSuperAdminPath = pathname.startsWith('/superadmin');
-  const isAdminPath = pathname.startsWith('/admin');
-  const isUserPath = pathname.startsWith('/user');
+  const isAdminPath = pathname.startsWith('/admin') && !pathname.includes('/signup');
+  const isUserPath = pathname.startsWith('/user') && !pathname.includes('/signup');
   
   // If user is on a public path and has a token, redirect to appropriate dashboard
-  if (isPublicPath && token) {
+  // BUT skip the redirection if we're coming from signup
+  if (isPublicPath && token && !fromSignup) {
     // Check if the path is /dashboard and redirect to the appropriate dashboard
     if (pathname === '/dashboard') {
       // We can't access localStorage in middleware, so we'll redirect to a client-side route
@@ -34,7 +42,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
   
-  // If user is trying to access superadmin, admin, or user path, we'll let the respective dashboard pages handle the role check
+  // Additional check for user paths to ensure valid token
+  if (isUserPath) {
+    // Verify token is valid - if we can't validate it here, the dashboard component 
+    // will do a more thorough check through the API
+    if (!token || token.value === 'undefined' || token.value === '') {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
   
   return NextResponse.next();
 }
@@ -47,7 +62,8 @@ export const config = {
     '/admin/:path*',
     '/user/:path*',
     '/login',
-    '/register',
+    '/user/signup',
+    '/admin/signup',
     '/',
   ],
 }; 

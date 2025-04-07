@@ -31,6 +31,29 @@ const getCompleteImageUrl = (imageUrl: string) => {
   return `http://127.0.0.1:8000${imageUrl}`;
 };
 
+// Add toast styling options
+const errorToastOptions = {
+  className: 'toast-error',
+  style: { 
+    background: '#9e2a2b !important', 
+    color: 'white !important',
+    border: 'none !important',
+    boxShadow: '0 4px 12px rgba(158, 42, 43, 0.4) !important'
+  },
+  duration: 5000
+};
+
+const successToastOptions = {
+  className: 'toast-success',
+  style: { 
+    background: '#10B981 !important', 
+    color: 'white !important',
+    border: 'none !important',
+    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4) !important'
+  },
+  duration: 3000
+};
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +87,7 @@ export default function AdminDashboardPage() {
       
       if (!response.ok) {
         if (response.status === 401) {
-          toast.error("Authentication failed. Please login again.");
+          toast.error("Authentication failed. Please login again.", errorToastOptions);
           router.push('/login');
           return;
         }
@@ -76,7 +99,7 @@ export default function AdminDashboardPage() {
       setImageHistory(data);
     } catch (error) {
       console.error('Error fetching image history:', error);
-      toast.error('Failed to load image history');
+      toast.error('Failed to load image history', errorToastOptions);
     }
   };
 
@@ -165,15 +188,15 @@ export default function AdminDashboardPage() {
         localStorage.removeItem("adminLocationData");
         setLocationData(null);
         
-        toast.success("Logged out successfully");
+        toast.success("Logged out successfully", successToastOptions);
         router.push('/login');
       } else {
         const data = await response.json();
-        toast.error(data.message || "Failed to logout");
+        toast.error(data.message || "Failed to logout", errorToastOptions);
       }
     } catch (error) {
       console.error("Logout error:", error);
-      toast.error("Error during logout");
+      toast.error("Error during logout", errorToastOptions);
     } finally {
       setIsLoading(false);
     }
@@ -185,7 +208,7 @@ export default function AdminDashboardPage() {
       const validTypes = ['image/png', 'image/jpeg', 'image/bmp', 'image/tiff'];
       
       if (!validTypes.includes(file.type)) {
-        toast.error("Please upload a valid image file (PNG, JPEG, BMP, TIFF)");
+        toast.error("Please upload a valid image file (PNG, JPEG, BMP, TIFF)", errorToastOptions);
         return;
       }
       
@@ -204,7 +227,7 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     
     if (!selectedImage) {
-      toast.error("Please select an image to upload");
+      toast.error("Please select an image to upload", errorToastOptions);
       return;
     }
     
@@ -235,7 +258,7 @@ export default function AdminDashboardPage() {
         });
       } catch (error) {
         console.error("Network error during fetch:", error);
-        toast.error("Network error. Please check your connection and try again.");
+        toast.error("Network error. Please check your connection and try again.", errorToastOptions);
         setIsUploading(false);
         return;
       }
@@ -243,13 +266,13 @@ export default function AdminDashboardPage() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         if (response.status === 401) {
-          toast.error("Authentication failed. Please login again.");
+          toast.error("Authentication failed. Please login again.", errorToastOptions);
           router.push('/login');
           return;
         }
         
         if (response.status === 404) {
-          toast.error("API endpoint not found. Please check the server configuration.");
+          toast.error("API endpoint not found. Please check the server configuration.", errorToastOptions);
           return;
         }
         
@@ -261,7 +284,7 @@ export default function AdminDashboardPage() {
       
       const data = await response.json();
       setLocationData(data);
-      toast.success("Location found successfully!");
+      toast.success("Location found successfully!", successToastOptions);
       
       // Clear the form
       setSelectedImage(null);
@@ -274,7 +297,7 @@ export default function AdminDashboardPage() {
       }
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to process image");
+      toast.error(error instanceof Error ? error.message : "Failed to process image", errorToastOptions);
     } finally {
       setIsUploading(false);
     }
@@ -283,7 +306,7 @@ export default function AdminDashboardPage() {
   const handleClearResults = () => {
     setLocationData(null);
     localStorage.removeItem('adminLocationData');
-    toast.success("Results cleared successfully");
+    toast.success("Results cleared successfully", successToastOptions);
   };
 
   const handleEdit = async (item: LocationData) => {
@@ -310,18 +333,18 @@ export default function AdminDashboardPage() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          toast.error("Authentication failed. Please login again.");
+          toast.error("Authentication failed. Please login again.", errorToastOptions);
           router.push('/login');
           return;
         }
 
         if (response.status === 403) {
-          toast.error("You don't have permission to edit this location.");
+          toast.error("You don't have permission to edit this location.", errorToastOptions);
           return;
         }
 
         if (response.status === 404) {
-          toast.error("Location not found. It may have been deleted.");
+          toast.error("Location not found. It may have been deleted.", errorToastOptions);
           setImageHistory(prevHistory => 
             prevHistory.filter(historyItem => historyItem.id !== item.id)
           );
@@ -337,12 +360,12 @@ export default function AdminDashboardPage() {
         )
       );
 
-      toast.success('Location updated successfully');
+      toast.success('Location updated successfully', successToastOptions);
       setEditingItem(null);
       setEditAddress("");
     } catch (error) {
       console.error('Edit error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update location');
+      toast.error(error instanceof Error ? error.message : 'Failed to update location', errorToastOptions);
     } finally {
       setIsEditing(false);
     }
@@ -371,18 +394,18 @@ export default function AdminDashboardPage() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          toast.error("Authentication failed. Please login again.");
+          toast.error("Authentication failed. Please login again.", errorToastOptions);
           router.push('/login');
           return;
         }
 
         if (response.status === 403) {
-          toast.error("You don't have permission to delete this location.");
+          toast.error("You don't have permission to delete this location.", errorToastOptions);
           return;
         }
 
         if (response.status === 404) {
-          toast.error("Location not found. It may have been already deleted.");
+          toast.error("Location not found. It may have been already deleted.", errorToastOptions);
           setImageHistory(prevHistory => 
             prevHistory.filter(historyItem => historyItem.id !== item.id)
           );
@@ -395,10 +418,10 @@ export default function AdminDashboardPage() {
       setImageHistory(prevHistory => 
         prevHistory.filter(historyItem => historyItem.id !== item.id)
       );
-      toast.success('Location deleted successfully');
+      toast.success('Location deleted successfully', successToastOptions);
     } catch (error) {
       console.error('Delete error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete location');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete location', errorToastOptions);
     }
   };
 
@@ -649,7 +672,7 @@ export default function AdminDashboardPage() {
                           <p className="text-gray-700 text-sm">{item["Distance (Haversine Formula)"]}</p>
                         </div>
                       )}
-            </div>
+                    </div>
                   </CardContent>
                 </Card>
               ))}

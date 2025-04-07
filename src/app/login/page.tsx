@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,11 +24,36 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loginType, setLoginType] = useState<"user" | "admin" | "superadmin">("user");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | React.ReactNode>("");
+  const [usernameError, setUsernameError] = useState<string>("");
+
+  const validateUsername = (username: string): boolean => {
+    // Username should be at least 3 characters long
+    if (username.length < 3) {
+      setUsernameError("Username must be at least 3 characters long");
+      return false;
+    }
+
+    // Username should only contain letters, numbers, and underscores
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+      setUsernameError("Username can only contain letters, numbers, and underscores");
+      return false;
+    }
+
+    setUsernameError("");
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Validate username before proceeding
+    if (!validateUsername(username)) {
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -56,11 +81,74 @@ export default function LoginPage() {
       
     } catch (error) {
       console.error("Login error:", error);
-      setError(error instanceof Error ? error.message : "Login failed");
+      
+      // Handle different error cases
+      if (error instanceof Error) {
+        if (error.message.includes("not found")) {
+          // Username not found error - show sign up link
+          setError(
+            <div className="text-center">
+              <p className="text-red-500">{error.message}</p>
+              <Link 
+                href={loginType === "admin" ? "/admin/signup" : "/user/signup"} 
+                className="text-blue-500 hover:underline mt-2 inline-block"
+              >
+                Click here to sign up
+              </Link>
+            </div>
+          );
+        } else if (error.message.includes("Username or password is incorrect")) {
+          // Generic authentication error - show error message and clear password field
+          setError(
+            <div className="text-center">
+              <p className="text-red-500">{error.message}</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Please verify your credentials and try again
+              </p>
+            </div>
+          );
+          setPassword(""); // Clear password field for security
+        } else {
+          // Generic error
+          setError(error.message);
+        }
+      } else {
+        setError("Login failed");
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.trim();
+    setUsername(value);
+    // Validate on each change
+    validateUsername(value);
+    // Clear error when user starts typing
+    if (error) {
+      setError("");
+    }
+  };
+
+  const renderUsernameField = () => (
+    <div className="flex flex-col space-y-1.5">
+      <Label htmlFor="username">Username</Label>
+      <Input
+        id="username"
+        placeholder="Enter your username (min. 3 characters)"
+        value={username}
+        onChange={handleUsernameChange}
+        required
+        autoComplete="username"
+        minLength={3}
+        className={usernameError ? "border-red-500" : ""}
+      />
+      {usernameError && (
+        <p className="text-sm text-red-500 mt-1">{usernameError}</p>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -81,17 +169,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit}>
               <CardContent className="px-6">
                 <div className="grid w-full items-center gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      placeholder="Enter your username"
-                      value={username}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
-                      required
-                      autoComplete="username"
-                    />
-                  </div>
+                  {renderUsernameField()}
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="password">Password</Label>
                     <Input
@@ -109,12 +187,12 @@ export default function LoginPage() {
               </CardContent>
               <CardFooter className="flex flex-col gap-4 px-6 pb-6">
                 {error && <p className="text-red-500 text-sm">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full" disabled={isLoading || !!usernameError}>
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
                 <p className="text-sm text-center text-gray-500">
                   Don't have an account?{" "}
-                  <Link href="/signup" className="text-blue-500 hover:underline">
+                  <Link href="/user/signup" className="text-blue-500 hover:underline">
                     Sign up
                   </Link>
                 </p>
@@ -125,17 +203,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit}>
               <CardContent className="px-6">
                 <div className="grid w-full items-center gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      placeholder="Enter your username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      required
-                      autoComplete="username"
-                    />
-                  </div>
+                  {renderUsernameField()}
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="password">Password</Label>
                     <Input
@@ -144,7 +212,6 @@ export default function LoginPage() {
                       className="mb-5"
                       placeholder="Enter your password"
                       value={password}
-                      
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       autoComplete="current-password"
@@ -154,12 +221,12 @@ export default function LoginPage() {
               </CardContent>
               <CardFooter className="flex flex-col gap-4 px-6 pb-6">
                 {error && <p className="text-red-500 text-sm">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full" disabled={isLoading || !!usernameError}>
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
                 <p className="text-sm text-center text-gray-500">
                   Don't have an account?{" "}
-                  <Link href="/signup" className="text-blue-500 hover:underline">
+                  <Link href="/admin/signup" className="text-blue-500 hover:underline">
                     Sign up
                   </Link>
                 </p>
@@ -170,17 +237,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit}>
               <CardContent className="px-6">
                 <div className="grid w-full items-center gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      placeholder="Enter your username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      required
-                      autoComplete="username"
-                    />
-                  </div>
+                  {renderUsernameField()}
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="password">Password</Label>
                     <Input
@@ -198,15 +255,9 @@ export default function LoginPage() {
               </CardContent>
               <CardFooter className="flex flex-col gap-4 px-6 pb-6">
                 {error && <p className="text-red-500 text-sm">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full" disabled={isLoading || !!usernameError}>
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
-                <p className="text-sm text-center text-gray-500">
-                  Don't have an account?{" "}
-                  <Link href="/signup" className="text-blue-500 hover:underline">
-                    Sign up
-                  </Link>
-                </p>
               </CardFooter>
             </form>
           </TabsContent>

@@ -59,6 +59,14 @@ export async function login(username: string, password: string, loginType: strin
 
     if (!response.ok) {
       const errorData = await response.json();
+      // Only show specific message for 404 (not found) if we're certain
+      if (response.status === 404 && errorData.detail?.includes("not found")) {
+        throw new Error(`Username "${username}" not found. Please sign up first.`);
+      }
+      // For 401 and other authentication failures, show a generic message
+      if (response.status === 401 || response.status === 403) {
+        throw new Error("Username or password is incorrect. Please try again.");
+      }
       throw new Error(errorData.detail || "Login failed");
     }
 

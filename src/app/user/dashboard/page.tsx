@@ -31,6 +31,29 @@ const getCompleteImageUrl = (imageUrl: string) => {
   return `http://127.0.0.1:8000${imageUrl}`;
 };
 
+// Add these constants at the top of the file, after imports
+const errorToastOptions = {
+  className: 'toast-error',
+  style: { 
+    background: '#9e2a2b !important', 
+    color: 'white !important',
+    border: 'none !important',
+    boxShadow: '0 4px 12px rgba(158, 42, 43, 0.4) !important'
+  },
+  duration: 5000
+};
+
+const successToastOptions = {
+  className: 'toast-success',
+  style: { 
+    background: '#10B981 !important', 
+    color: 'white !important',
+    border: 'none !important',
+    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4) !important'
+  },
+  duration: 3000
+};
+
 export default function UserDashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +87,7 @@ export default function UserDashboardPage() {
       
       if (!response.ok) {
         if (response.status === 401) {
-          toast.error("Authentication failed. Please login again.");
+          toast.error("Authentication failed. Please login again.", errorToastOptions);
           router.push('/login');
           return;
         }
@@ -72,11 +95,9 @@ export default function UserDashboardPage() {
       }
       
       const data = await response.json();
-      console.log("Fetched image history:", data); // Debug log
       setImageHistory(data);
     } catch (error) {
-      console.error('Error fetching image history:', error);
-      toast.error('Failed to load image history');
+      toast.error('Failed to load image history', errorToastOptions);
     }
   };
 
@@ -101,7 +122,6 @@ export default function UserDashboardPage() {
       try {
         setLocationData(JSON.parse(savedLocationData));
       } catch (error) {
-        console.error('Error parsing saved location data:', error);
         localStorage.removeItem('locationData'); // Clear invalid data
       }
     }
@@ -118,49 +138,52 @@ export default function UserDashboardPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Log request cookies first
-        console.log("=== Request Cookies ===");
-        const requestCookies = document.cookie.split(';').map(c => c.trim());
-        console.log("_next_hmr_refresh_hash:", requestCookies.find(cookie => cookie.startsWith('_next_hmr_refresh_hash='))?.split('=')[1] || 'Not found');
-        console.log("csrftoken:", requestCookies.find(cookie => cookie.startsWith('csrftoken='))?.split('=')[1] || 'Not found');
+        // Check for user information in localStorage
+        const userStr = localStorage.getItem("user");
+        if (!userStr) {
+          router.replace('/login');
+          return;
+        }
 
         const response = await fetch('/api/auth/check', {
           credentials: 'include',
+          headers: {
+            'Cache-Control': 'no-cache, no-store'
+          },
         });
         
         if (!response.ok) {
-          router.push('/login');
+          // Clear any potentially invalid stored data
+          localStorage.removeItem("user");
+          localStorage.removeItem("locationData");
+          router.replace('/login');
           return;
         }
         
         const data = await response.json();
+        if (!data.success) {
+          localStorage.removeItem("user");
+          localStorage.removeItem("locationData");
+          router.replace('/login');
+          return;
+        }
+        
+        // Set authenticated state only after verification
         setIsAuthenticated(true);
-
-        // Log response cookies
-        console.log("\n=== Response Cookies ===");
-        const responseCookies = document.cookie.split(';').map(c => c.trim());
-        console.log("access_token:", responseCookies.find(cookie => cookie.startsWith('access_token='))?.split('=')[1] || 'Not found');
-        console.log("refresh_token:", responseCookies.find(cookie => cookie.startsWith('refresh_token='))?.split('=')[1] || 'Not found');
         
-        // Log all cookies for debugging
-        console.log("\n=== All Current Cookies ===");
-        console.log(document.cookie.split(';').map(c => c.trim()));
+        // Process user information from localStorage
+        const user = JSON.parse(userStr);
+        setUsername(user.username);
         
-        // Get user information from localStorage
-        const userStr = localStorage.getItem("user");
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          setUsername(user.username);
-          
-          // Verify that the user is not an admin
-          const isAdmin = user.groups && user.groups.includes("admin");
-          if (isAdmin) {
-            router.push('/admin/dashboard');
-          }
+        // Verify that the user is not an admin
+        const isAdmin = user.groups && user.groups.includes("admin");
+        if (isAdmin) {
+          router.push('/admin/dashboard');
         }
       } catch (error) {
-        console.error("Auth check error:", error);
-        router.push('/login');
+        localStorage.removeItem("user");
+        localStorage.removeItem("locationData");
+        router.replace('/login');
       }
     };
     
@@ -181,15 +204,14 @@ export default function UserDashboardPage() {
         localStorage.removeItem("locationData");
         setLocationData(null);
         
-        toast.success("Logged out successfully");
+        toast.success("Logged out successfully", successToastOptions);
         router.push('/login');
       } else {
         const data = await response.json();
-        toast.error(data.message || "Failed to logout");
+        toast.error(data.message || "Failed to logout", errorToastOptions);
       }
     } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Error during logout");
+      toast.error("Error during logout", errorToastOptions);
     } finally {
       setIsLoading(false);
     }
@@ -201,7 +223,7 @@ export default function UserDashboardPage() {
       const validTypes = ['image/png', 'image/jpeg', 'image/bmp', 'image/tiff'];
       
       if (!validTypes.includes(file.type)) {
-        toast.error("Please upload a valid image file (PNG, JPEG, BMP, TIFF)");
+        toast.error("Please upload a valid image file (PNG, JPEG, BMP, TIFF)", errorToastOptions);
         return;
       }
       
@@ -220,7 +242,7 @@ export default function UserDashboardPage() {
     e.preventDefault();
     
     if (!selectedImage) {
-      toast.error("Please select an image to upload");
+      toast.error("Please select an image to upload", errorToastOptions);
       return;
     }
     
@@ -233,22 +255,11 @@ export default function UserDashboardPage() {
         formData.append('home_address', homeAddress.trim());
       }
       
-      // Debug log the FormData contents
-      console.log("Sending FormData:");
-      for (const [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
-      
       const csrfToken = getCookie('csrftoken');
       
       if (!csrfToken) {
         throw new Error('CSRF token not found. Please refresh the page.');
       }
-
-      // Log request information
-      console.log("=== Request Information ===");
-      console.log("CSRF Token:", csrfToken);
-      console.log("Request URL:", '/api/location/upload/');
 
       let response;
       try {
@@ -261,8 +272,7 @@ export default function UserDashboardPage() {
           body: formData,
         });
       } catch (error) {
-        console.error("Network error during fetch:", error);
-        toast.error("Network error. Please check your connection and try again.");
+        toast.error("Network error. Please check your connection and try again.", errorToastOptions);
         setIsUploading(false);
         return;
       }
@@ -270,23 +280,15 @@ export default function UserDashboardPage() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         if (response.status === 401) {
-          toast.error("Authentication failed. Please login again.");
+          toast.error("Authentication failed. Please login again.", errorToastOptions);
           router.push('/login');
           return;
         }
         
         // Enhanced error handling for 404
         if (response.status === 404) {
-          console.error("API endpoint not found. Please check the URL:", '/api/location/upload/');
-          toast.error("API endpoint not found. Please check the server configuration.");
+          toast.error("API endpoint not found. Please check the server configuration.", errorToastOptions);
           return;
-        }
-        
-        // Log detailed error information
-        console.error("Request failed with status:", response.status);
-        console.error("Response headers:", Object.fromEntries([...response.headers.entries()]));
-        if (errorData) {
-          console.error("Error data:", errorData);
         }
         
         throw new Error(
@@ -297,7 +299,7 @@ export default function UserDashboardPage() {
       
       const data = await response.json();
       setLocationData(data);
-      toast.success("Location found successfully!");
+      toast.success("Location found successfully!", successToastOptions);
       
       // Clear the form
       setSelectedImage(null);
@@ -309,8 +311,7 @@ export default function UserDashboardPage() {
         fileInput.value = '';
       }
     } catch (error) {
-      console.error("Upload error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to process image");
+      toast.error(error instanceof Error ? error.message : "Failed to process image", errorToastOptions);
     } finally {
       setIsUploading(false);
     }
@@ -320,7 +321,7 @@ export default function UserDashboardPage() {
   const handleClearResults = () => {
     setLocationData(null);
     localStorage.removeItem('locationData');
-    toast.success("Results cleared successfully");
+    toast.success("Results cleared successfully", successToastOptions);
   };
 
   // Add handleEdit function
@@ -349,18 +350,18 @@ export default function UserDashboardPage() {
       if (!response.ok) {
         // Handle specific error cases
         if (response.status === 401) {
-          toast.error("Authentication failed. Please login again.");
+          toast.error("Authentication failed. Please login again.", errorToastOptions);
           router.push('/login');
           return;
         }
 
         if (response.status === 403) {
-          toast.error("You don't have permission to edit this location.");
+          toast.error("You don't have permission to edit. Only Admin and SuperAdmin can edit locations.", errorToastOptions);
           return;
         }
 
         if (response.status === 404) {
-          toast.error("Location not found. It may have been deleted.");
+          toast.error("Location not found. It may have been deleted.", errorToastOptions);
           // Remove the item from image history
           setImageHistory(prevHistory => 
             prevHistory.filter(historyItem => historyItem.id !== item.id)
@@ -379,12 +380,11 @@ export default function UserDashboardPage() {
         )
       );
 
-      toast.success('Location updated successfully');
+      toast.success('Location updated successfully', successToastOptions);
       setEditingItem(null);
       setEditAddress("");
     } catch (error) {
-      console.error('Edit error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update location');
+      toast.error(error instanceof Error ? error.message : 'Failed to update location', errorToastOptions);
     } finally {
       setIsEditing(false);
     }
@@ -415,18 +415,18 @@ export default function UserDashboardPage() {
       if (!response.ok) {
         // Handle specific error cases
         if (response.status === 401) {
-          toast.error("Authentication failed. Please login again.");
+          toast.error("Authentication failed. Please login again.", errorToastOptions);
           router.push('/login');
           return;
         }
 
         if (response.status === 403) {
-          toast.error("You don't have permission to delete this location.");
+          toast.error("You don't have permission to delete. Only SuperAdmin can delete locations.", errorToastOptions);
           return;
         }
 
         if (response.status === 404) {
-          toast.error("Location not found. It may have been already deleted.");
+          toast.error("Location not found. It may have been already deleted.", errorToastOptions);
           // Remove the item from image history
           setImageHistory(prevHistory => 
             prevHistory.filter(historyItem => historyItem.id !== item.id)
@@ -442,10 +442,9 @@ export default function UserDashboardPage() {
       setImageHistory(prevHistory => 
         prevHistory.filter(historyItem => historyItem.id !== item.id)
       );
-      toast.success('Location deleted successfully');
+      toast.success('Location deleted successfully', successToastOptions);
     } catch (error) {
-      console.error('Delete error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete location');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete location', errorToastOptions);
     }
   };
 
