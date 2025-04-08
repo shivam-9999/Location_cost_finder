@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.text import slugify
 import os
 from datetime import datetime
+from django.contrib.auth.models import User
 
 def upload_to(instance, filename):
     """Define image upload path"""
@@ -12,6 +13,16 @@ def upload_to(instance, filename):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     clean_name = f'location_image_{timestamp}.{ext}'
     return clean_name
+
+class AdminRegistrationRequest(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    is_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='approved_requests')
+
+    def __str__(self):
+        return f"Admin request for {self.user.username} - {'Approved' if self.is_approved else 'Pending'}"
 
 class LocationImage(models.Model):
     id = models.AutoField(primary_key=True)

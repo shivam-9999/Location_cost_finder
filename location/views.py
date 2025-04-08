@@ -32,7 +32,7 @@ class LocationImageUploadView(generics.CreateAPIView):
         
         # ✅ Enforce `home_address` before passing to serializer
         if 'home_address' not in request.data:
-            request.data['home_address'] = "Davean Dr, North York, ON, Canada M2L 2R6"
+            request.data['home_address'] = "Canada"
 
         serializer = self.get_serializer(data=request.data)
         print("\n🔍 Before Validation - Serializer Data:", serializer.initial_data)

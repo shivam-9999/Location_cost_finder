@@ -14,13 +14,21 @@ from location.views import (
 from location.auth_views import (
     login_view,
     signup_view,
+    admin_signup_view,
+    list_admin_requests,
+    approve_admin_request,
+    reject_admin_request,
     LogoutView, 
     LogoutAllDevicesView,
     CSRFCookieView,
     admin_login_view,
     superadmin_login_view,
     reset_admin_password,
-    check_user_details
+    check_user_details,
+    delete_user,
+    delete_admin,
+    list_users,
+    list_admins
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 from django.conf import settings
@@ -37,6 +45,10 @@ urlpatterns = [
     path('check-admin/', check_superuser),
     path('api/auth/csrf/', CSRFCookieView.as_view(), name='csrf'),
     path('api/auth/signup/', signup_view, name='signup'),
+    path('api/auth/admin/signup/', admin_signup_view, name='admin-signup'),
+    path('api/auth/admin/requests/', list_admin_requests, name='list-admin-requests'),
+    path('api/auth/admin/approve/<int:request_id>/', approve_admin_request, name='approve-admin'),
+    path('api/auth/admin/reject/<int:request_id>/', reject_admin_request, name='reject-admin'),
     path('api/auth/login/', login_view, name='login'),
     path('api/auth/admin/login/', admin_login_view, name='admin-login'),
     path('api/auth/superadmin/login/', superadmin_login_view, name='superadmin-login'),
@@ -45,6 +57,10 @@ urlpatterns = [
     path('api/auth/logout/', LogoutView.as_view(), name='logout'),
     path('api/auth/logout-all/', LogoutAllDevicesView.as_view(), name='logout-all'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/auth/user/<int:user_id>/delete/', delete_user, name='delete-user'),
+    path('api/auth/admin/<int:admin_id>/delete/', delete_admin, name='delete-admin'),
+    path('api/auth/users/', list_users, name='list-users'),
+    path('api/auth/admins/', list_admins, name='list-admins'),
     path('api/location/upload/', LocationImageUploadView.as_view(), name='image-upload'),
     path('images/', LocationImageListCreateView.as_view(), name='image-list'),
     path('images/<int:pk>/', LocationImageDetailView.as_view(), name='image-detail'),

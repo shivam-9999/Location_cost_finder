@@ -17,8 +17,10 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.settings import api_settings
 from django.middleware.csrf import CsrfViewMiddleware
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.models import Group
+from django.utils import timezone
+from .models import AdminRegistrationRequest
 import re
 
 class CookieJWTAuthentication(JWTAuthentication):
@@ -429,4 +431,353 @@ def signup_view(request):
         return Response(
             {'error': f'Error creating user: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        ) 
+        )
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def admin_signup_view(request):
+    """
+    Endpoint for admin registration requests.
+    Creates a user and AdminRegistrationRequest, but doesn't grant admin privileges until approved.
+    """
+    # Check if CSRF token exists in cookies
+    csrf_token = request.COOKIES.get('csrftoken')
+    if not csrf_token:
+        return Response(
+            {'error': 'CSRF token not found. Please get a CSRF token first.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    username = request.data.get('username')
+    password = request.data.get('password')
+    email = request.data.get('email', '').strip()  # Make email optional
+
+    if not username or not password:
+        return Response(
+            {'error': 'Username and password are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Username validation
+    if len(username) < 3:
+        return Response(
+            {'error': 'Username must be at least 3 characters long'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Password validation
+    if len(password) < 8:
+        return Response(
+            {'error': 'Password must be at least 8 characters long'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Email validation (if provided)
+    if email:
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, email):
+            return Response(
+                {'error': 'Invalid email format'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    # Check if username already exists
+    User = get_user_model()
+    if User.objects.filter(username=username).exists():
+        return Response(
+            {'error': 'Username already exists'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Check if email already exists (if provided)
+    if email and User.objects.filter(email=email).exists():
+        return Response(
+            {'error': 'Email already registered'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        # Create user (not yet admin)
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            email=email if email else None,  # Make email optional
+            is_active=True,  # User can login but won't have admin privileges
+            is_staff=False   # Will be set to True upon approval
+        )
+
+        # Create admin registration request
+        AdminRegistrationRequest.objects.create(user=user)
+
+        return Response({
+            'message': 'Admin registration request submitted successfully. Waiting for superadmin approval.',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email if user.email else ''
+            }
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response(
+            {'error': f'Error creating admin request: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_admin_requests(request):
+    """List all pending admin registration requests. Only accessible by superadmin."""
+    if not request.user.is_superuser:
+        return Response(
+            {'error': 'Only superadmin can view admin requests'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    requests = AdminRegistrationRequest.objects.filter(is_approved=False)
+    requests_data = [{
+        'id': req.id,
+        'username': req.user.username,
+        'email': req.user.email,
+        'created_at': req.created_at
+    } for req in requests]
+
+    return Response(requests_data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def approve_admin_request(request, request_id):
+    """Approve an admin registration request. Only accessible by superadmin."""
+    if not request.user.is_superuser:
+        return Response(
+            {'error': 'Only superadmin can approve admin requests'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    try:
+        admin_request = AdminRegistrationRequest.objects.get(id=request_id, is_approved=False)
+    except AdminRegistrationRequest.DoesNotExist:
+        return Response(
+            {'error': 'Admin request not found or already approved'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Update the user to be an admin
+    user = admin_request.user
+    user.is_staff = True
+    user.save()
+
+    # Add user to admin group
+    admin_group, _ = Group.objects.get_or_create(name='admin')
+    user.groups.add(admin_group)
+
+    # Update the request
+    admin_request.is_approved = True
+    admin_request.approved_at = timezone.now()
+    admin_request.approved_by = request.user
+    admin_request.save()
+
+    return Response({
+        'message': f'Admin request for {user.username} approved successfully',
+        'admin': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email
+        }
+    })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def reject_admin_request(request, request_id):
+    """Reject an admin registration request. Only accessible by superadmin."""
+    if not request.user.is_superuser:
+        return Response(
+            {'error': 'Only superadmin can reject admin requests'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    try:
+        admin_request = AdminRegistrationRequest.objects.get(id=request_id, is_approved=False)
+    except AdminRegistrationRequest.DoesNotExist:
+        return Response(
+            {'error': 'Admin request not found or already processed'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Delete the user and the request
+    user = admin_request.user
+    username = user.username
+    user.delete()  # This will also delete the admin_request due to CASCADE
+
+    return Response({
+        'message': f'Admin request for {username} rejected and user account removed'
+    })
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_user(request, user_id):
+    """Delete a regular user. Only accessible by superadmin."""
+if not request.user.is_superuser:
+        return Response(
+            {'error': 'Only superadmin can delete users'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    try:
+        User = get_user_model()
+        user = User.objects.get(id=user_id)
+        
+        # Prevent deletion of admin/superadmin users through this endpoint
+        if user.is_superuser or user.is_staff or user.groups.filter(name='admin').exists():
+            return Response(
+                {'error': 'Cannot delete admin or superadmin users through this endpoint'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # Prevent self-deletion
+        if user == request.user:
+            return Response(
+                {'error': 'Cannot delete your own account'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        username = user.username
+        user.delete()
+        
+        return Response({
+            'message': f'User {username} has been deleted successfully'
+        })
+        
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'User not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Error deleting user: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_admin(request, admin_id):
+    """Delete an admin user. Only accessible by superadmin."""
+    if not request.user.is_superuser:
+        return Response(
+            {'error': 'Only superadmin can delete admins'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    try:
+        User = get_user_model()
+        admin = User.objects.get(id=admin_id)
+        
+        # Check if the user is actually an admin
+        if not (admin.is_staff and admin.groups.filter(name='admin').exists()):
+            return Response(
+                {'error': 'Specified user is not an admin'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Prevent deletion of superadmin
+        if admin.is_superuser:
+            return Response(
+                {'error': 'Cannot delete superadmin users'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # Prevent self-deletion
+        if admin == request.user:
+            return Response(
+                {'error': 'Cannot delete your own account'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        username = admin.username
+        admin.delete()
+        
+        return Response({
+            'message': f'Admin {username} has been deleted successfully'
+        })
+        
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'Admin not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Error deleting admin: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_users(request):
+    """List all regular users. Only accessible by superadmin."""
+    try:
+        # Explicitly check authentication
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        if not request.user.is_superuser:
+            return Response(
+                {'error': 'Only superadmin can view user list'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        User = get_user_model()
+        # Get only regular users (not admins or superadmins)
+        users = User.objects.filter(is_superuser=False, is_staff=False).exclude(
+            groups__name='admin'
+        )
+        
+        users_data = [{
+            'id': user.id,
+            'username': user.username,
+            'email': user.email if user.email else '',
+            'date_joined': user.date_joined,
+            'last_login': user.last_login,
+            'is_active': user.is_active,
+            'groups': list(user.groups.values_list('name', flat=True))
+        } for user in users]
+
+        return Response(users_data)
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_admins(request):
+    """List all admin users. Only accessible by superadmin."""
+    if not request.user.is_superuser:
+        return Response(
+            {'error': 'Only superadmin can view admin list'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    User = get_user_model()
+    # Get all admin users (users who are staff and in admin group)
+    admins = User.objects.filter(
+        is_staff=True,
+        groups__name='admin'
+    ).exclude(is_superuser=True)  # Exclude superadmins
+    
+    admins_data = [{
+        'id': admin.id,
+        'username': admin.username,
+        'email': admin.email if admin.email else '',
+        'date_joined': admin.date_joined,
+        'last_login': admin.last_login,
+        'is_active': admin.is_active,
+        'groups': list(admin.groups.values_list('name', flat=True))
+    } for admin in admins]
+
+    return Response(admins_data) 

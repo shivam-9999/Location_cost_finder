@@ -121,7 +121,6 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-        'rest_framework.permissions.DjangoModelPermissions',
     ]
 }
 
@@ -136,7 +135,7 @@ SIMPLE_JWT = {
     'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_DOMAIN': None,
     'AUTH_COOKIE_SECURE': False,  # Set to False for local development
-    'AUTH_COOKIE_HTTP_ONLY': True,  # Keep True to prevent XSS attacks
+    'AUTH_COOKIE_HTTP_ONLY': True,
     'AUTH_COOKIE_PATH': '/',
     'AUTH_COOKIE_SAMESITE': 'Lax',
 }
@@ -144,20 +143,21 @@ SIMPLE_JWT = {
 # Cookie settings
 JWT_AUTH_COOKIE = 'access_token'
 JWT_AUTH_REFRESH_COOKIE = 'refresh_token'
-JWT_AUTH_SECURE = True
+JWT_AUTH_SECURE = False  # Set to False for local development
 JWT_AUTH_HTTPONLY = True
 JWT_AUTH_SAMESITE = 'Lax'
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
-    'https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net',
+    'http://localhost:3000',
     'http://localhost:8000',
-    "http://localhost:3000",
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:8000',
 ]
 
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_HTTPONLY = False  # Changed to False to allow JavaScript access
+CSRF_COOKIE_SECURE = False  # Set to False for local development
+SESSION_COOKIE_SECURE = False  # Set to False for local development
+CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
@@ -167,7 +167,8 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net"
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 
 # Add CORS_ALLOW_ALL_ORIGINS for development
