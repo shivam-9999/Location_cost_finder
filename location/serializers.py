@@ -109,7 +109,7 @@ class LocationImageSerializer(serializers.ModelSerializer):
         print("✅ Final validated data:", validated_data)
 
         # Handle `home_address`
-        home_address = validated_data.pop('home_address', "Davean Dr, North York, ON, Canada M2L 2R6")
+        home_address = validated_data.pop('home_address', "Canada")
         logger.info(f"📍 Using home address: {home_address}")
         
         home_lat, home_lng = get_coordinates(home_address)
