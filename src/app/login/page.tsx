@@ -21,7 +21,7 @@ import Link from "next/link";
 const LoginButton = ({ isLoading, usernameError }: { isLoading: boolean, usernameError: string }) => (
   <Button 
     type="submit" 
-    className="w-full bg-gradient-to-r from-blue-500 via-green-400 to-red-400 hover:from-blue-600 hover:via-green-500 hover:to-red-500 transition-all" 
+    className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 hover:from-blue-700 hover:via-blue-700 hover:to-blue-500 transition-all text-white" 
     disabled={isLoading || !!usernameError}
   >
     {isLoading ? "Logging in..." : "Login"}
@@ -172,7 +172,7 @@ export default function LoginPage() {
       
       {/* Content */}
       <Card className="w-[350px] p-0 z-10 shadow-xl">
-        <div className="w-full text-center py-4 bg-gradient-to-r from-blue-500 via-green-400 to-red-400 rounded-t-lg">
+        <div className="w-full text-center py-4 bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500  transition-all text-white rounded-t-lg">
           <h1 className="text-xl font-bold text-white">Location Finder</h1>
           <p className="text-white text-sm opacity-90">Sign in to your account</p>
         </div>

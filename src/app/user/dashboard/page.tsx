@@ -477,24 +477,24 @@ export default function UserDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Header with Google Maps-inspired gradient */}
-      <div className="bg-gradient-to-r from-blue-500 via-green-400 to-red-400 py-4 shadow-md">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with light blue background */}
+      <div className="bg-blue-500 py-4 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
-              {/* Google Maps-like pin icon */}
+              {/* Location pin icon */}
               <svg className="h-10 w-10 text-white" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
               </svg>
               <div className="ml-2">
                 <h1 className="text-2xl font-bold text-white">Location Finder</h1>
-                <p className="text-white text-sm opacity-80">Find and track locations from images</p>
+                <p className="text-white text-sm opacity-90">Find and track locations from images</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-white text-red-500 font-medium rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-red-500 transition-all"
+              className="px-4 py-2 bg-white text-blue-500 font-medium rounded-md hover:bg-blue-50 transition-all"
             >
               Logout
             </button>
@@ -521,7 +521,7 @@ export default function UserDashboardPage() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="shadow-lg border border-gray-100 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-green-400 py-4 px-6">
+              <div className="bg-blue-500 py-4 px-6">
                 <CardTitle className="text-white">Find Location from Image</CardTitle>
               </div>
               <CardContent className="pt-6">
@@ -571,7 +571,7 @@ export default function UserDashboardPage() {
                   
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-500 via-green-400 to-red-400 hover:from-blue-600 hover:via-green-500 hover:to-red-500 transition-all"
+                    className="w-full bg-blue-700 hover:bg-blue-800 text-white transition-all"
                     disabled={!selectedImage || isUploading}
                   >
                     {isUploading ? "Processing..." : "Find Location"}
@@ -582,7 +582,7 @@ export default function UserDashboardPage() {
             
             {locationData && (
               <Card className="shadow-lg border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-green-400 to-blue-500 py-4 px-6">
+                <div className="bg-blue-500 py-4 px-6">
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-white">Location Results</CardTitle>
                     <Button

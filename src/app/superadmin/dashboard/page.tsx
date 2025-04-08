@@ -759,7 +759,7 @@ export default function SuperAdminDashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header with Google Maps-inspired gradient */}
-      <div className="bg-gradient-to-r from-blue-500 via-green-400 to-red-400 py-4 shadow-md">
+      <div className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 hover:from-blue-700 hover:via-blue-700 p-6 hover:to-blue-500 transition-all text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
