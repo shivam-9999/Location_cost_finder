@@ -264,10 +264,25 @@ export default function AdminDashboardPage() {
       }
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          // If the response is not valid JSON, use the text as is
+          throw new Error(errorText || `Upload failed with status ${response.status}`);
+        }
+        
         if (response.status === 401) {
           toast.error("Authentication failed. Please login again.", errorToastOptions);
           router.push('/login');
+          return;
+        }
+        
+        // Handle 400 Bad Request with specific error message for duplicate image
+        if (response.status === 400 && errorData?.non_field_errors) {
+          const errorMessage = errorData.non_field_errors[0];
+          toast.error(errorMessage, errorToastOptions);
           return;
         }
         
@@ -278,6 +293,7 @@ export default function AdminDashboardPage() {
         
         throw new Error(
           errorData?.detail || 
+          errorData?.error ||
           `Upload failed with status ${response.status}`
         );
       }
@@ -437,53 +453,72 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Admin Dashboard
-            </h1>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {/* Header with Google Maps-inspired gradient */}
+      <div className="bg-gradient-to-r from-blue-500 via-green-400 to-red-400 py-4 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              {/* Google Maps-like pin icon */}
+              <svg className="h-10 w-10 text-white" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+              </svg>
+              <div className="ml-2">
+                <h1 className="text-2xl font-bold text-white">Location Finder</h1>
+                <p className="text-white text-sm opacity-80">Admin Management Dashboard</p>
+              </div>
+            </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              className="px-4 py-2 bg-white text-red-500 font-medium rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-red-500 transition-all"
             >
               Logout
             </button>
           </div>
-          <p className="text-sm my-4 text-gray-500">{typeof window !== 'undefined' ? window.location.pathname : ''}</p>
-          
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-0">
           {/* Welcome message for admin */}
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <p className="text-lg text-gray-700">
-              Welcome, Admin {username}!
-            </p>
+          <div className="bg-white shadow-lg rounded-lg p-6 mb-8 border border-gray-100">
+            <div className="flex items-center">
+              <div className="bg-gradient-to-r from-blue-500 to-green-400 rounded-full p-3 mr-4">
+                <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">Welcome, {username}!</h2>
+                <p className="text-gray-500">Manage locations and verify image data</p>
+              </div>
+            </div>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Find Location from Image</CardTitle>
-              </CardHeader>
-              <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Card className="shadow-lg border border-gray-100 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-500 to-green-400 py-4 px-6">
+                <CardTitle className="text-white">Find Location from Image</CardTitle>
+              </div>
+              <CardContent className="pt-6">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="image">Upload Image</Label>
+                    <Label htmlFor="image" className="text-gray-700 font-medium">Upload Image</Label>
                     <div className="flex items-center justify-center w-full">
                       <label
                         htmlFor="image-upload"
-                        className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                        className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-200 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                          <svg className="w-12 h-12 mb-4 text-blue-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
                             <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
                           </svg>
-                          <p className="mb-2 text-sm text-gray-500">
+                          <p className="mb-2 text-sm text-gray-700">
                             <span className="font-semibold">Click to upload</span> or drag and drop
                           </p>
                           <p className="text-xs text-gray-500">PNG, JPEG, BMP, TIFF</p>
                           {selectedImage && (
-                            <p className="text-sm text-blue-500 mt-2">
+                            <p className="text-sm text-blue-500 mt-2 font-medium">
                               Selected: {selectedImage.name}
                             </p>
                           )}
@@ -500,18 +535,19 @@ export default function AdminDashboardPage() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="home_address">Home Address (Optional)</Label>
+                    <Label htmlFor="home_address" className="text-gray-700 font-medium">Home Address (Optional)</Label>
                     <Input
                       id="home_address"
                       placeholder="Enter your home address"
                       value={homeAddress}
                       onChange={(e) => setHomeAddress(e.target.value)}
+                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                   
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-blue-500 via-green-400 to-red-400 hover:from-blue-600 hover:via-green-500 hover:to-red-500 transition-all"
                     disabled={!selectedImage || isUploading}
                   >
                     {isUploading ? "Processing..." : "Find Location"}
@@ -521,55 +557,55 @@ export default function AdminDashboardPage() {
             </Card>
             
             {locationData && (
-              <Card>
-                <CardHeader>
+              <Card className="shadow-lg border border-gray-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-green-400 to-blue-500 py-4 px-6">
                   <div className="flex justify-between items-center">
-                    <CardTitle>Location Results</CardTitle>
+                    <CardTitle className="text-white">Location Results</CardTitle>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleClearResults}
-                      className="text-red-600 hover:text-red-700"
+                      className="bg-white text-red-500 border-none hover:bg-gray-100"
                     >
                       Clear Results
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="border-2 border-dotted border-gray-300 rounded-lg">
+                </div>
+                <CardContent className="space-y-6 pt-6">
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
                     {locationData["Image_URL"] && (
-                      <div className="col-span-2">
+                      <div>
                         <div className="flex justify-center">
                           <img 
                             src={getCompleteImageUrl(locationData["Image_URL"])} 
                             alt="Location Image" 
-                            className="max-w-[1000px] max-h-[300px] w-full object-contain rounded-lg shadow-sm" 
+                            className="max-w-[1000px] max-h-[300px] w-full object-contain" 
                           />
                         </div>
                       </div>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Address</Label>
-                      <p className="text-gray-700">{locationData.Address}</p>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <Label className="text-gray-700 font-medium">Address</Label>
+                      <p className="text-gray-800 mt-1">{locationData.Address}</p>
                     </div>
-                    <div>
-                      <Label>Landmark</Label>
-                      <p className="text-gray-700">{locationData.Landmark}</p>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <Label className="text-gray-700 font-medium">Landmark</Label>
+                      <p className="text-gray-800 mt-1">{locationData.Landmark}</p>
                     </div>
-                    <div>
-                      <Label>Coordinates</Label>
-                      <p className="text-gray-700">{locationData.Coordinates}</p>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <Label className="text-gray-700 font-medium">Coordinates</Label>
+                      <p className="text-gray-800 mt-1">{locationData.Coordinates}</p>
                     </div>
-                    <div>
-                      <Label>Confidence Score</Label>
-                      <p className="text-gray-700">{locationData["Confidence Score"]}</p>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <Label className="text-gray-700 font-medium">Confidence Score</Label>
+                      <p className="text-gray-800 mt-1">{locationData["Confidence Score"]}</p>
                     </div>
                     {locationData["Distance (Haversine Formula)"] && (
-                      <div className="col-span-2">
-                        <Label>Distance from Home</Label>
-                        <p className="text-gray-700">{locationData["Distance (Haversine Formula)"]}</p>
+                      <div className="col-span-2 bg-gray-50 p-4 rounded-lg">
+                        <Label className="text-gray-700 font-medium">Distance from Home</Label>
+                        <p className="text-gray-800 mt-1">{locationData["Distance (Haversine Formula)"]}</p>
                       </div>
                     )}
                   </div>
@@ -579,20 +615,59 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Image History Section */}
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">All Users Image History</h2>
+          <div className="mt-12 mb-8">
+            <div className="flex items-center mb-6">
+              <svg className="h-6 w-6 text-blue-500 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18z" />
+              </svg>
+              <h2 className="text-2xl font-bold text-gray-800">All Users Image History</h2>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {imageHistory.map((item) => (
-                <Card key={item.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle className="text-lg">Location #{item.id}</CardTitle>
-                      <div className="flex gap-2">
+                <Card key={item.id} className="shadow-md hover:shadow-lg transition-shadow border border-gray-100 overflow-hidden">
+                  <div className="relative h-60 bg-gray-100">
+                    {item.Image_URL && (
+                      <img 
+                        src={getCompleteImageUrl(item.Image_URL)} 
+                        alt={`Location ${item.id}`} 
+                        className="w-full h-full object-contain p-2" 
+                      />
+                    )}
+                    <div className="absolute top-2 left-2 bg-white py-1 px-3 rounded-full shadow-md">
+                      <p className="text-sm font-medium text-gray-700">Location #{item.id}</p>
+                    </div>
+                  </div>
+                  <CardContent className="pt-4">
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-gray-700 font-medium">Address</Label>
+                        <p className="text-gray-800 mt-1 break-words">{item.Address}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-700 font-medium">Landmark</Label>
+                        <p className="text-gray-800 mt-1">{item.Landmark}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-700 font-medium">Coordinates</Label>
+                        <p className="text-gray-800 mt-1">{item.Coordinates}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-700 font-medium">Confidence Score</Label>
+                        <p className="text-gray-800 mt-1">{item["Confidence Score"]}</p>
+                      </div>
+                      {item["Distance (Haversine Formula)"] && (
+                        <div>
+                          <Label className="text-gray-700 font-medium">Distance from Home</Label>
+                          <p className="text-gray-800 mt-1">{item["Distance (Haversine Formula)"]}</p>
+                        </div>
+                      )}
+                      <div className="flex justify-between pt-4">
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button
                               variant="outline"
                               size="sm"
+                              className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
                               onClick={() => {
                                 setEditingItem(item);
                                 setEditAddress(item.Address);
@@ -601,26 +676,27 @@ export default function AdminDashboardPage() {
                               Edit
                             </Button>
                           </DialogTrigger>
-                          <DialogContent>
+                          <DialogContent className="sm:max-w-md">
                             <DialogHeader>
-                              <DialogTitle>Edit Location</DialogTitle>
+                              <DialogTitle className="text-center">Edit Location</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
                               <div className="space-y-2">
-                                <Label>Current Address</Label>
-                                <p className="text-sm text-gray-500">{item.Address}</p>
+                                <Label className="text-gray-700">Current Address</Label>
+                                <p className="text-sm text-gray-500 p-2 bg-gray-50 rounded-md">{item.Address}</p>
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="edit-address">New Address</Label>
+                                <Label htmlFor="edit-address" className="text-gray-700">New Address</Label>
                                 <Input
                                   id="edit-address"
                                   value={editAddress}
                                   onChange={(e) => setEditAddress(e.target.value)}
                                   placeholder="Enter new address"
+                                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                                 />
                               </div>
                               <Button
-                                className="w-full"
+                                className="w-full bg-gradient-to-r from-blue-500 to-green-400 hover:from-blue-600 hover:to-green-500"
                                 onClick={() => handleEdit(item)}
                                 disabled={isEditing || !editAddress.trim()}
                               >
@@ -632,50 +708,24 @@ export default function AdminDashboardPage() {
                         <Button
                           variant="destructive"
                           size="sm"
+                          className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
                           onClick={() => handleDelete(item)}
                         >
                           Delete
                         </Button>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="border-2 border-dotted border-gray-300 rounded-lg p-2">
-                      <div className="flex justify-center">
-                        <img 
-                          src={getCompleteImageUrl(item.Image_URL)} 
-                          alt={`Location ${item.id}`} 
-                          className="max-w-[300px] max-h-[200px] w-full object-contain rounded-lg shadow-sm" 
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div>
-                        <Label>Address</Label>
-                        <p className="text-gray-700 text-sm">{item.Address}</p>
-                      </div>
-                      <div>
-                        <Label>Landmark</Label>
-                        <p className="text-gray-700 text-sm">{item.Landmark}</p>
-                      </div>
-                      <div>
-                        <Label>Coordinates</Label>
-                        <p className="text-gray-700 text-sm">{item.Coordinates}</p>
-                      </div>
-                      <div>
-                        <Label>Confidence Score</Label>
-                        <p className="text-gray-700 text-sm">{item["Confidence Score"]}</p>
-                      </div>
-                      {item["Distance (Haversine Formula)"] && (
-                        <div>
-                          <Label>Distance from Home</Label>
-                          <p className="text-gray-700 text-sm">{item["Distance (Haversine Formula)"]}</p>
-                        </div>
-                      )}
-                    </div>
                   </CardContent>
                 </Card>
               ))}
+              {imageHistory.length === 0 && (
+                <div className="col-span-full flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
+                  <svg className="h-12 w-12 text-gray-400 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 19h18M5 6h14v10H5V6zm4 13v-3h6v3h-6zm3-19v3" />
+                  </svg>
+                  <p className="text-gray-600 text-center">No image history yet. Users need to upload images first.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

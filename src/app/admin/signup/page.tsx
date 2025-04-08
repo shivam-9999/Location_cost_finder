@@ -179,16 +179,16 @@ export default function AdminSignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <Card className="w-[350px] p-0">
-        <CardHeader className="pt-6 px-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white">
+      <Card className="w-[350px] p-0 shadow-lg border border-gray-100">
+        <CardHeader className="pt-6 px-6 bg-gradient-to-r from-blue-600 to-blue-400 text-white">
           <CardTitle>Admin Sign Up</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-white text-opacity-80">
             Create a new admin account request
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="px-6">
+          <CardContent className="px-6 pt-6">
             <div className="grid w-full items-center gap-4">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="username">Username</Label>
@@ -201,6 +201,7 @@ export default function AdminSignupPage() {
                   required
                   minLength={3}
                   autoComplete="username"
+                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -213,6 +214,7 @@ export default function AdminSignupPage() {
                   value={formData.email}
                   onChange={handleChange}
                   autoComplete="email"
+                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -221,20 +223,23 @@ export default function AdminSignupPage() {
                   id="password"
                   name="password"
                   type="password"
-                  className="mb-5"
                   placeholder="Choose a password (min. 6 characters)"
                   value={formData.password}
                   onChange={handleChange}
                   required
                   minLength={6}
                   autoComplete="new-password"
+                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 />
+                {validationErrors.password && (
+                  <p className="text-sm text-red-500 mt-1">{validationErrors.password}</p>
+                )}
               </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4 px-6 pb-6">
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white" disabled={isLoading}>
               {isLoading ? "Submitting..." : "Submit Admin Request"}
             </Button>
             <p className="text-sm text-center text-gray-500">

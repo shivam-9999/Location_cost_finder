@@ -254,7 +254,7 @@ export default function UserSignupPage() {
         onChange={handleChange}
         required={required}
         autoComplete={name}
-        className={validationErrors[name] ? "border-red-500" : ""}
+        className={validationErrors[name] ? "border-red-500" : "border-gray-300 focus:border-green-500 focus:ring-green-500"}
       />
       {validationErrors[name] && (
         <p className="text-sm text-red-500 mt-1">{validationErrors[name]}</p>
@@ -263,16 +263,16 @@ export default function UserSignupPage() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <Card className="w-[350px] p-0">
-        <CardHeader className="pt-6 px-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white">
+      <Card className="w-[350px] p-0 shadow-lg border border-gray-100">
+        <CardHeader className="pt-6 px-6 bg-gradient-to-r from-green-600 to-green-400 text-white">
           <CardTitle>User Sign Up</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-white text-opacity-80">
             Create a new user account
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="px-6">
+          <CardContent className="px-6 pt-6">
             <div className="grid w-full items-center gap-4">
               {renderField(
                 "username",
@@ -301,14 +301,14 @@ export default function UserSignupPage() {
             {error && <p className="text-red-500 text-sm">{error}</p>}
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full bg-green-500 hover:bg-green-600 text-white" 
               disabled={isLoading || Object.values(validationErrors).some(error => error !== "")}
             >
               {isLoading ? "Signing up..." : "Sign Up"}
             </Button>
             <p className="text-sm text-center text-gray-500">
               Already have an account?{" "}
-              <Link href="/login" className="text-blue-500 hover:underline">
+              <Link href="/login" className="text-green-500 hover:underline">
                 Login
               </Link>
             </p>
