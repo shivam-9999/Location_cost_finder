@@ -18,6 +18,16 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 
+const LoginButton = ({ isLoading, usernameError }: { isLoading: boolean, usernameError: string }) => (
+  <Button 
+    type="submit" 
+    className="w-full bg-gradient-to-r from-blue-500 via-green-400 to-red-400 hover:from-blue-600 hover:via-green-500 hover:to-red-500 transition-all" 
+    disabled={isLoading || !!usernameError}
+  >
+    {isLoading ? "Logging in..." : "Login"}
+  </Button>
+);
+
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -151,23 +161,30 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <Card className="w-[350px] p-0">
+    <div className="min-h-screen flex items-center justify-center relative">
+      {/* Background image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat" 
+        style={{ 
+          backgroundImage: 'url("/images/maxresdefault.jpg")',
+        }}
+      />
+      
+      {/* Content */}
+      <Card className="w-[350px] p-0 z-10 shadow-xl">
+        <div className="w-full text-center py-4 bg-gradient-to-r from-blue-500 via-green-400 to-red-400 rounded-t-lg">
+          <h1 className="text-xl font-bold text-white">Location Finder</h1>
+          <p className="text-white text-sm opacity-90">Sign in to your account</p>
+        </div>
         <Tabs defaultValue="user" className="w-full p-4" onValueChange={(value: string) => setLoginType(value as "user" | "admin" | "superadmin")}>
-          <TabsList className="grid w-full grid-cols-3 p-1 bg-muted rounded-t-lg">
-            <TabsTrigger value="user" className="rounded-sm">User</TabsTrigger>
-            <TabsTrigger value="admin" className="rounded-sm">Admin</TabsTrigger>
-            <TabsTrigger value="superadmin" className="rounded-sm">Super Admin</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 p-1 bg-muted rounded-md">
+            <TabsTrigger value="user" className="rounded-sm data-[state=active]:bg-green-500 data-[state=active]:text-white">User</TabsTrigger>
+            <TabsTrigger value="admin" className="rounded-sm data-[state=active]:bg-blue-500 data-[state=active]:text-white">Admin</TabsTrigger>
+            <TabsTrigger value="superadmin" className="rounded-sm data-[state=active]:bg-red-500 data-[state=active]:text-white">Super Admin</TabsTrigger>
           </TabsList>
-          <CardHeader className="pt-6 px-6">
-            <CardTitle>Login</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your account
-            </CardDescription>
-          </CardHeader>
           <TabsContent value="user">
             <form onSubmit={handleSubmit}>
-              <CardContent className="px-6">
+              <CardContent className="px-6 pt-6">
                 <div className="grid w-full items-center gap-4">
                   {renderUsernameField()}
                   <div className="flex flex-col space-y-1.5">
@@ -187,9 +204,7 @@ export default function LoginPage() {
               </CardContent>
               <CardFooter className="flex flex-col gap-4 px-6 pb-6">
                 {error && <p className="text-red-500 text-sm">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading || !!usernameError}>
-                  {isLoading ? "Logging in..." : "Login"}
-                </Button>
+                <LoginButton isLoading={isLoading} usernameError={usernameError} />
                 <p className="text-sm text-center text-gray-500">
                   Don't have an account?{" "}
                   <Link href="/user/signup" className="text-blue-500 hover:underline">
@@ -201,7 +216,7 @@ export default function LoginPage() {
           </TabsContent>
           <TabsContent value="admin">
             <form onSubmit={handleSubmit}>
-              <CardContent className="px-6">
+              <CardContent className="px-6 pt-6">
                 <div className="grid w-full items-center gap-4">
                   {renderUsernameField()}
                   <div className="flex flex-col space-y-1.5">
@@ -221,9 +236,7 @@ export default function LoginPage() {
               </CardContent>
               <CardFooter className="flex flex-col gap-4 px-6 pb-6">
                 {error && <p className="text-red-500 text-sm">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading || !!usernameError}>
-                  {isLoading ? "Logging in..." : "Login"}
-                </Button>
+                <LoginButton isLoading={isLoading} usernameError={usernameError} />
                 <p className="text-sm text-center text-gray-500">
                   Don't have an account?{" "}
                   <Link href="/admin/signup" className="text-blue-500 hover:underline">
@@ -235,7 +248,7 @@ export default function LoginPage() {
           </TabsContent>
           <TabsContent value="superadmin">
             <form onSubmit={handleSubmit}>
-              <CardContent className="px-6">
+              <CardContent className="px-6 pt-6">
                 <div className="grid w-full items-center gap-4">
                   {renderUsernameField()}
                   <div className="flex flex-col space-y-1.5">
@@ -255,9 +268,7 @@ export default function LoginPage() {
               </CardContent>
               <CardFooter className="flex flex-col gap-4 px-6 pb-6">
                 {error && <p className="text-red-500 text-sm">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading || !!usernameError}>
-                  {isLoading ? "Logging in..." : "Login"}
-                </Button>
+                <LoginButton isLoading={isLoading} usernameError={usernameError} />
               </CardFooter>
             </form>
           </TabsContent>

@@ -1082,102 +1082,102 @@ export default function SuperAdminDashboardPage() {
                     <p className="text-gray-500">No image history found</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {imageHistory.map((item) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {imageHistory.map((item) => (
                       <Card key={item.id} className="overflow-hidden">
                         <CardHeader className="pb-2">
-                          <div className="flex justify-between items-center">
-                            <CardTitle className="text-lg">Location #{item.id}</CardTitle>
-                            <div className="flex gap-2">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      setEditingItem(item);
-                                      setEditAddress(item.Address);
-                                    }}
-                                  >
-                                    Edit
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Edit Location</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4 py-4">
-                                    <div className="space-y-2">
-                                      <Label>Current Address</Label>
-                                      <p className="text-sm text-gray-500">{item.Address}</p>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor="edit-address">New Address</Label>
-                                      <Input
-                                        id="edit-address"
-                                        value={editAddress}
-                                        onChange={(e) => setEditAddress(e.target.value)}
-                                        placeholder="Enter new address"
-                                      />
-                                    </div>
-                                    <Button
-                                      className="w-full"
-                                      onClick={() => handleEdit(item)}
-                                      disabled={isEditing || !editAddress.trim()}
-                                    >
-                                      {isEditing ? "Updating..." : "Update Address"}
-                                    </Button>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-lg">Location #{item.id}</CardTitle>
+                      <div className="flex gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingItem(item);
+                                setEditAddress(item.Address);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Location</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                              <div className="space-y-2">
+                                <Label>Current Address</Label>
+                                <p className="text-sm text-gray-500">{item.Address}</p>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="edit-address">New Address</Label>
+                                <Input
+                                  id="edit-address"
+                                  value={editAddress}
+                                  onChange={(e) => setEditAddress(e.target.value)}
+                                  placeholder="Enter new address"
+                                />
+                              </div>
                               <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDelete(item)}
+                                className="w-full"
+                                onClick={() => handleEdit(item)}
+                                disabled={isEditing || !editAddress.trim()}
                               >
-                                Delete
+                                {isEditing ? "Updating..." : "Update Address"}
                               </Button>
                             </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="border-2 border-dotted border-gray-300 rounded-lg p-2">
-                            <div className="flex justify-center">
-                              <img 
-                                src={getCompleteImageUrl(item.Image_URL)} 
-                                alt={`Location ${item.id}`} 
-                                className="max-w-[300px] max-h-[200px] w-full object-contain rounded-lg shadow-sm" 
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <div>
-                              <Label>Address</Label>
-                              <p className="text-gray-700 text-sm">{item.Address}</p>
-                            </div>
-                            <div>
-                              <Label>Landmark</Label>
-                              <p className="text-gray-700 text-sm">{item.Landmark}</p>
-                            </div>
-                            <div>
-                              <Label>Coordinates</Label>
-                              <p className="text-gray-700 text-sm">{item.Coordinates}</p>
-                            </div>
-                            <div>
-                              <Label>Confidence Score</Label>
-                              <p className="text-gray-700 text-sm">{item["Confidence Score"]}</p>
-                            </div>
-                            {item["Distance (Haversine Formula)"] && (
-                              <div>
-                                <Label>Distance from Home</Label>
-                                <p className="text-gray-700 text-sm">{item["Distance (Haversine Formula)"]}</p>
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(item)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="border-2 border-dotted border-gray-300 rounded-lg p-2">
+                      <div className="flex justify-center">
+                        <img 
+                          src={getCompleteImageUrl(item.Image_URL)} 
+                          alt={`Location ${item.id}`} 
+                          className="max-w-[300px] max-h-[200px] w-full object-contain rounded-lg shadow-sm" 
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <Label>Address</Label>
+                        <p className="text-gray-700 text-sm">{item.Address}</p>
+                      </div>
+                      <div>
+                        <Label>Landmark</Label>
+                        <p className="text-gray-700 text-sm">{item.Landmark}</p>
+                      </div>
+                      <div>
+                        <Label>Coordinates</Label>
+                        <p className="text-gray-700 text-sm">{item.Coordinates}</p>
+                      </div>
+                      <div>
+                        <Label>Confidence Score</Label>
+                        <p className="text-gray-700 text-sm">{item["Confidence Score"]}</p>
+            </div>
+                      {item["Distance (Haversine Formula)"] && (
+                        <div>
+                          <Label>Distance from Home</Label>
+                          <p className="text-gray-700 text-sm">{item["Distance (Haversine Formula)"]}</p>
+            </div>
+                      )}
+            </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
                 )}
               </CardContent>
             </Card>
