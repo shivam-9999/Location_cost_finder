@@ -336,27 +336,109 @@ export default function SuperAdminDashboardPage() {
     checkAuth();
   }, [router]);
 
+  // Add this function to handle cleanup
+  const cleanupAndLogout = async () => {
+    try {
+      // Call logout API
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
+
+      if (response.ok) {
+        // Clear localStorage
+        localStorage.removeItem("user");
+        localStorage.removeItem("locationData");
+        
+        // Clear cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+        // Clear any other app-specific data
+        setLocationData(null);
+        setIsAuthenticated(false);
+        setUsername(null);
+        
+        // Force redirect to login
+        router.replace('/login');
+      }
+    } catch (error) {
+      console.error("Cleanup error:", error);
+    }
+  };
+
+  // Add effect to handle popstate (back/forward button) and beforeunload
+  useEffect(() => {
+    const handlePopState = async (event: PopStateEvent) => {
+      event.preventDefault();
+      await cleanupAndLogout();
+    };
+
+    const handleBeforeUnload = async (event: BeforeUnloadEvent) => {
+      await cleanupAndLogout();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [router]);
+
+  // Prevent back navigation
+  useEffect(() => {
+    const preventBackNavigation = () => {
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', preventBackNavigation);
+
+    return () => {
+      window.removeEventListener('popstate', preventBackNavigation);
+    };
+  }, []);
+
+  // Update the existing handleLogout function to include cookie cleanup
   const handleLogout = async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
       });
       
       if (response.ok) {
+        // Clear localStorage
         localStorage.removeItem("user");
-        localStorage.removeItem("superadminLocationData");
-        setLocationData(null);
+        localStorage.removeItem("locationData");
         
+        // Clear cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+        setLocationData(null);
         toast.success("Logged out successfully", successToastOptions);
-        router.push('/login');
+        router.replace('/login');
       } else {
         const data = await response.json();
         toast.error(data.message || "Failed to logout", errorToastOptions);
       }
     } catch (error) {
-      console.error("Logout error:", error);
       toast.error("Error during logout", errorToastOptions);
     } finally {
       setIsLoading(false);
@@ -782,7 +864,7 @@ export default function SuperAdminDashboardPage() {
           </div>
         </div>
       </div>
-
+          
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 sm:px-0">
           {/* Welcome message for superadmin */}
@@ -1025,7 +1107,7 @@ export default function SuperAdminDashboardPage() {
                           type="file"
                           className="hidden"
                           onChange={handleImageChange}
-                          accept=".png,.jpg,.jpeg,.bmp,.tiff"
+                          accept=".png,.jpg,.jpeg"
                         />
                       </label>
                     </div>
@@ -1128,8 +1210,8 @@ export default function SuperAdminDashboardPage() {
                 <p className="text-gray-600 text-center">No image history yet. Users need to upload images first.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {imageHistory.map((item) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {imageHistory.map((item) => (
                   <Card key={item.id} className="shadow-md hover:shadow-lg transition-shadow border border-gray-100 overflow-hidden">
                     <div className="relative h-60 bg-gray-100">
                       {item.Image_URL && (
@@ -1168,63 +1250,63 @@ export default function SuperAdminDashboardPage() {
                           </div>
                         )}
                         <div className="flex justify-between pt-4">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
                                 className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
-                                onClick={() => {
-                                  setEditingItem(item);
-                                  setEditAddress(item.Address);
-                                }}
-                              >
-                                Edit
-                              </Button>
-                            </DialogTrigger>
+                              onClick={() => {
+                                setEditingItem(item);
+                                setEditAddress(item.Address);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                          </DialogTrigger>
                             <DialogContent className="sm:max-w-md">
-                              <DialogHeader>
+                            <DialogHeader>
                                 <DialogTitle className="text-center">Edit Location</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4 py-4">
-                                <div className="space-y-2">
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                              <div className="space-y-2">
                                   <Label className="text-gray-700">Current Address</Label>
                                   <p className="text-sm text-gray-500 p-2 bg-gray-50 rounded-md">{item.Address}</p>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-address" className="text-gray-700">New Address</Label>
-                                  <Input
-                                    id="edit-address"
-                                    value={editAddress}
-                                    onChange={(e) => setEditAddress(e.target.value)}
-                                    placeholder="Enter new address"
-                                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                  />
-                                </div>
-                                <Button
-                                  className="w-full"
-                                  onClick={() => handleEdit(item)}
-                                  disabled={isEditing || !editAddress.trim()}
-                                >
-                                  {isEditing ? "Updating..." : "Update Address"}
-                                </Button>
                               </div>
-                            </DialogContent>
-                          </Dialog>
-                          <Button
-                            variant="destructive"
-                            size="sm"
+                              <div className="space-y-2">
+                                  <Label htmlFor="edit-address" className="text-gray-700">New Address</Label>
+                                <Input
+                                  id="edit-address"
+                                  value={editAddress}
+                                  onChange={(e) => setEditAddress(e.target.value)}
+                                  placeholder="Enter new address"
+                                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                />
+                              </div>
+                              <Button
+                                className="w-full"
+                                onClick={() => handleEdit(item)}
+                                disabled={isEditing || !editAddress.trim()}
+                              >
+                                {isEditing ? "Updating..." : "Update Address"}
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          variant="destructive"
+                          size="sm"
                             className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-                            onClick={() => handleDelete(item)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
+                          onClick={() => handleDelete(item)}
+                        >
+                          Delete
+                        </Button>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+            </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
             )}
           </div>
         </div>

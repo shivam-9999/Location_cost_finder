@@ -68,14 +68,19 @@ export default function AdminDashboardPage() {
   const [editAddress, setEditAddress] = useState("");
   const [isEditing, setIsEditing] = useState(false);
 
+  // Add this function to get CSRF token once and cache it
+  const getCsrfToken = () => {
+    const token = getCookie('csrftoken');
+    if (!token) {
+      throw new Error('CSRF token not found. Please refresh the page.');
+    }
+    return token;
+  };
+
   // Fetch image history
   const fetchImageHistory = async () => {
     try {
-      const csrfToken = getCookie('csrftoken');
-      
-      if (!csrfToken) {
-        throw new Error('CSRF token not found. Please refresh the page.');
-      }
+      const csrfToken = getCsrfToken();
 
       const response = await fetch('/api/images', {
         method: 'GET',
@@ -175,27 +180,109 @@ export default function AdminDashboardPage() {
     checkAuth();
   }, [router]);
 
+  // Add this function to handle cleanup
+  const cleanupAndLogout = async () => {
+    try {
+      // Call logout API
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
+
+      if (response.ok) {
+        // Clear localStorage
+        localStorage.removeItem("user");
+        localStorage.removeItem("adminLocationData");
+        
+        // Clear cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+        // Clear any other app-specific data
+        setLocationData(null);
+        setIsAuthenticated(false);
+        setUsername(null);
+        
+        // Force redirect to login
+        router.replace('/login');
+      }
+    } catch (error) {
+      console.error("Cleanup error:", error);
+    }
+  };
+
+  // Add effect to handle popstate (back/forward button) and beforeunload
+  useEffect(() => {
+    const handlePopState = async (event: PopStateEvent) => {
+      event.preventDefault();
+      await cleanupAndLogout();
+    };
+
+    const handleBeforeUnload = async (event: BeforeUnloadEvent) => {
+      await cleanupAndLogout();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [router]);
+
+  // Prevent back navigation
+  useEffect(() => {
+    const preventBackNavigation = () => {
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', preventBackNavigation);
+
+    return () => {
+      window.removeEventListener('popstate', preventBackNavigation);
+    };
+  }, []);
+
+  // Update the existing handleLogout function to include cookie cleanup
   const handleLogout = async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
       });
       
       if (response.ok) {
+        // Clear localStorage
         localStorage.removeItem("user");
         localStorage.removeItem("adminLocationData");
-        setLocationData(null);
         
+        // Clear cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+        setLocationData(null);
         toast.success("Logged out successfully", successToastOptions);
-        router.push('/login');
+        router.replace('/login');
       } else {
         const data = await response.json();
         toast.error(data.message || "Failed to logout", errorToastOptions);
       }
     } catch (error) {
-      console.error("Logout error:", error);
       toast.error("Error during logout", errorToastOptions);
     } finally {
       setIsLoading(false);
@@ -240,11 +327,7 @@ export default function AdminDashboardPage() {
         formData.append('home_address', homeAddress.trim());
       }
       
-      const csrfToken = getCookie('csrftoken');
-      
-      if (!csrfToken) {
-        throw new Error('CSRF token not found. Please refresh the page.');
-      }
+      const csrfToken = getCsrfToken();
 
       let response;
       try {
@@ -331,10 +414,7 @@ export default function AdminDashboardPage() {
       const formData = new FormData();
       formData.append('home_address', editAddress.trim());
 
-      const csrfToken = getCookie('csrftoken');
-      if (!csrfToken) {
-        throw new Error('CSRF token not found. Please refresh the page.');
-      }
+      const csrfToken = getCsrfToken();
 
       const response = await fetch(`/api/images/${item.id}/edit/`, {
         method: 'PUT',
@@ -393,10 +473,7 @@ export default function AdminDashboardPage() {
     }
 
     try {
-      const csrfToken = getCookie('csrftoken');
-      if (!csrfToken) {
-        throw new Error('CSRF token not found. Please refresh the page.');
-      }
+      const csrfToken = getCsrfToken();
 
       const response = await fetch(`/api/images/${item.id}/delete/`, {
         method: 'DELETE',
@@ -453,26 +530,27 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Header with Google Maps-inspired gradient */}
-      <div className="bg-gradient-to-r from-blue-500 via-green-400 to-red-400 py-4 shadow-md">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with light blue background */}
+      <div className="bg-blue-500 py-4 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
-              {/* Google Maps-like pin icon */}
+              {/* Location pin icon */}
               <svg className="h-10 w-10 text-white" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
               </svg>
               <div className="ml-2">
-                <h1 className="text-2xl font-bold text-white">Location Finder</h1>
-                <p className="text-white text-sm opacity-80">Admin Management Dashboard</p>
+                <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
+                <p className="text-white text-sm opacity-90">Manage locations and verify image data</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-white text-red-500 font-medium rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-red-500 transition-all"
+              className="px-4 py-2 bg-white text-blue-500 font-medium rounded-md hover:bg-blue-50 transition-all"
+              disabled={isLoading}
             >
-              Logout
+              {isLoading ? "Logging out..." : "Logout"}
             </button>
           </div>
         </div>
@@ -483,9 +561,9 @@ export default function AdminDashboardPage() {
           {/* Welcome message for admin */}
           <div className="bg-white shadow-lg rounded-lg p-6 mb-8 border border-gray-100">
             <div className="flex items-center">
-              <div className="bg-gradient-to-r from-blue-500 to-green-400 rounded-full p-3 mr-4">
+              <div className="bg-blue-500 rounded-full p-3 mr-4">
                 <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
               <div>
@@ -497,7 +575,7 @@ export default function AdminDashboardPage() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="shadow-lg border border-gray-100 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-green-400 py-4 px-6">
+              <div className="bg-blue-500 py-4 px-6">
                 <CardTitle className="text-white">Find Location from Image</CardTitle>
               </div>
               <CardContent className="pt-6">
@@ -528,7 +606,7 @@ export default function AdminDashboardPage() {
                           type="file"
                           className="hidden"
                           onChange={handleImageChange}
-                          accept=".png,.jpg,.jpeg,.bmp,.tiff"
+                          accept=".png,.jpg,.jpeg"
                         />
                       </label>
                     </div>
@@ -547,7 +625,7 @@ export default function AdminDashboardPage() {
                   
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-500 via-green-400 to-red-400 hover:from-blue-600 hover:via-green-500 hover:to-red-500 transition-all"
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white transition-all"
                     disabled={!selectedImage || isUploading}
                   >
                     {isUploading ? "Processing..." : "Find Location"}
@@ -558,14 +636,14 @@ export default function AdminDashboardPage() {
             
             {locationData && (
               <Card className="shadow-lg border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-green-400 to-blue-500 py-4 px-6">
+                <div className="bg-blue-500 py-4 px-6">
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-white">Location Results</CardTitle>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleClearResults}
-                      className="bg-white text-red-500 border-none hover:bg-gray-100"
+                      className="bg-white text-blue-500 border-none hover:bg-blue-50"
                     >
                       Clear Results
                     </Button>
@@ -620,7 +698,7 @@ export default function AdminDashboardPage() {
               <svg className="h-6 w-6 text-blue-500 mr-2" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18z" />
               </svg>
-              <h2 className="text-2xl font-bold text-gray-800">All Users Image History</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Image History</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {imageHistory.map((item) => (

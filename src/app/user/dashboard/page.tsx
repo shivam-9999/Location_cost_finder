@@ -190,6 +190,77 @@ export default function UserDashboardPage() {
     checkAuth();
   }, [router]);
 
+  // Add this function to handle cleanup
+  const cleanupAndLogout = async () => {
+    try {
+      // Call logout API
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
+
+      if (response.ok) {
+        // Clear localStorage
+        localStorage.removeItem("user");
+        localStorage.removeItem("locationData");
+        
+        // Clear cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+        // Clear any other app-specific data
+        setLocationData(null);
+        setIsAuthenticated(false);
+        setUsername(null);
+        
+        // Force redirect to login
+        router.replace('/login');
+      }
+    } catch (error) {
+      console.error("Cleanup error:", error);
+    }
+  };
+
+  // Add effect to handle popstate (back/forward button) and beforeunload
+  useEffect(() => {
+    const handlePopState = async (event: PopStateEvent) => {
+      event.preventDefault();
+      await cleanupAndLogout();
+    };
+
+    const handleBeforeUnload = async (event: BeforeUnloadEvent) => {
+      await cleanupAndLogout();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [router]);
+
+  // Prevent back navigation
+  useEffect(() => {
+    const preventBackNavigation = () => {
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', preventBackNavigation);
+
+    return () => {
+      window.removeEventListener('popstate', preventBackNavigation);
+    };
+  }, []);
+
   const handleLogout = async () => {
     setIsLoading(true);
     try {
@@ -552,7 +623,7 @@ export default function UserDashboardPage() {
                           type="file"
                           className="hidden"
                           onChange={handleImageChange}
-                          accept=".png,.jpg,.jpeg,.bmp,.tiff"
+                          accept=".png,.jpg,.jpeg"
                         />
                       </label>
                     </div>

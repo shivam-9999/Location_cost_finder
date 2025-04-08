@@ -67,10 +67,7 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      // First get CSRF token
-      await getCsrfToken();
-      
-      // Then attempt login using the existing login function
+      // Attempt login using the login function
       // Pass the loginType as a parameter to the login function
       const data = await login(username, password, loginType);
       console.log("Login successful:", data);
@@ -172,7 +169,7 @@ export default function LoginPage() {
       
       {/* Content */}
       <Card className="w-[350px] p-0 z-10 shadow-xl">
-        <div className="w-full text-center py-4 bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500  transition-all text-white rounded-t-lg">
+        <div className="w-full text-center py-4 bg-gradient-to-r from-blue-700 via-blue-600 to-blue-400  transition-all text-white rounded-t-lg">
           <h1 className="text-xl font-bold text-white">Location Finder</h1>
           <p className="text-white text-sm opacity-90">Sign in to your account</p>
         </div>
