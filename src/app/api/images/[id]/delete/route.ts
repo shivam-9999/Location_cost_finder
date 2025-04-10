@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { BACKEND_URL } from "@/constants";
 
 export async function DELETE(
   request: NextRequest,
@@ -7,7 +8,7 @@ export async function DELETE(
   try {
     const cookies = request.headers.get('cookie');
     
-    const response = await fetch(`http://127.0.0.1:8000/images/${params.id}/delete/`, {
+    const response = await fetch(`${BACKEND_URL}/images/${params.id}/delete/`, {
       method: 'DELETE',
       headers: {
         'Cookie': cookies || '',

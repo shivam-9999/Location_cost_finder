@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { BACKEND_URL } from "@/constants";
 
 export async function PUT(
   request: NextRequest,
@@ -8,7 +9,7 @@ export async function PUT(
     const cookies = request.headers.get('cookie');
     const formData = await request.formData();
     
-    const response = await fetch(`http://127.0.0.1:8000/images/${params.id}/edit/`, {
+    const response = await fetch(`${BACKEND_URL}/images/${params.id}/edit/`, {
       method: 'PUT',
       headers: {
         'Cookie': cookies || '',

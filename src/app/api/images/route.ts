@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { BACKEND_URL } from "@/constants";
 
 export async function GET(request: NextRequest) {
   try {
@@ -6,11 +7,12 @@ export async function GET(request: NextRequest) {
     const cookies = request.headers.get('cookie');
     
     // Forward the request to the external API
-    const response = await fetch('http://127.0.0.1:8000/images/', {
+    const response = await fetch(`${BACKEND_URL}/images/`, {
       method: 'GET',
       headers: {
         'Cookie': cookies || '',
       },
+      credentials: 'include',
     });
     
     if (!response.ok) {

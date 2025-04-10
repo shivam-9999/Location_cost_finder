@@ -67,13 +67,9 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      // First get CSRF token
-      await getCsrfToken();
-      
       // Then attempt login using the existing login function
       // Pass the loginType as a parameter to the login function
       const data = await login(username, password, loginType);
-      console.log("Login successful:", data);
       toast.success("Login successful!");
       
       // Check if the user is a superadmin, admin, or regular user based on the response

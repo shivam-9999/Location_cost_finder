@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { BACKEND_URL } from "@/constants";
 
 interface LocationData {
   id: number;
@@ -28,7 +29,7 @@ const getCompleteImageUrl = (imageUrl: string) => {
     return imageUrl;
   }
   // Add the Django backend URL
-  return `http://127.0.0.1:8000${imageUrl}`;
+  return `${BACKEND_URL}${imageUrl}`;
 };
 
 // Add these constants at the top of the file, after imports

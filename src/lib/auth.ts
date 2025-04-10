@@ -1,9 +1,10 @@
 import { getCookie } from './cookies';
+import { BACKEND_URL } from '../constants';
 
 export async function getCsrfToken() {
   try {
     // Wrap the fetch in a try-catch to handle any external interference
-    const response = await fetch("http://localhost:8000/api/auth/csrf/", {
+    const response = await fetch(`${BACKEND_URL}/api/auth/csrf/`, {
       method: "GET",
       credentials: "include"
     }).catch(error => {
@@ -24,7 +25,8 @@ export async function getCsrfToken() {
       throw new Error("Failed to parse response");
     }
     
-    console.log("✅ Success:", data);
+    // Only log a simple message instead of the full data object
+    console.log("✅ CSRF token fetched successfully");
     return data;
   } catch (error) {
     // Log the error but don't let it crash the app
@@ -39,12 +41,12 @@ export async function login(username: string, password: string, loginType: strin
     const csrfToken = await getCsrfToken();
     
     // Determine the endpoint based on login type
-    let endpoint = "http://localhost:8000/api/auth/login/";
+    let endpoint = `${BACKEND_URL}/api/auth/login/`;
     
     if (loginType === "admin") {
-      endpoint = "http://localhost:8000/api/auth/admin/login/";
+      endpoint = `${BACKEND_URL}/api/auth/admin/login/`;
     } else if (loginType === "superadmin") {
-      endpoint = "http://localhost:8000/api/auth/superadmin/login/";
+      endpoint = `${BACKEND_URL}/api/auth/superadmin/login/`;
     }
     
     const response = await fetch(endpoint, {
@@ -77,7 +79,6 @@ export async function login(username: string, password: string, loginType: strin
       localStorage.setItem("user", JSON.stringify(data.user));
     }
     
-    console.log("Login successful:", data);
     return data;
   } catch (error) {
     console.error("Login error:", error);

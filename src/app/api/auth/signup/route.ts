@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BACKEND_URL } from "@/constants";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     const cookies = request.headers.get("cookie");
     
     // Forward the request to the Django backend
-    const response = await fetch("http://127.0.0.1:8000/api/auth/signup/", {
+    const response = await fetch(`${BACKEND_URL}/api/auth/signup/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

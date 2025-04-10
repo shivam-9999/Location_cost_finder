@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { BACKEND_URL } from "@/constants";
 
 interface User {
   id: number;
@@ -50,14 +51,14 @@ interface LocationData {
   "Image_URL": string;
 }
 
-// Add this function to get the complete image URL
+// Function to get the complete image URL
 const getCompleteImageUrl = (imageUrl: string) => {
   // Check if the URL is already absolute
   if (imageUrl.startsWith('http')) {
     return imageUrl;
   }
-  // Add the Django backend URL
-  return `http://127.0.0.1:8000${imageUrl}`;
+  // Add the backend URL
+  return `${BACKEND_URL}${imageUrl}`;
 };
 
 // Add toast styling options
@@ -111,7 +112,7 @@ export default function SuperAdminDashboardPage() {
         throw new Error('CSRF token not found. Please refresh the page.');
       }
 
-      const response = await fetch('http://localhost:8000/api/auth/admin/requests/', {
+      const response = await fetch(`${BACKEND_URL}/api/auth/admin/requests/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -152,7 +153,7 @@ export default function SuperAdminDashboardPage() {
         throw new Error('CSRF token not found. Please refresh the page.');
       }
 
-      const response = await fetch(`http://localhost:8000/api/auth/admin/approve/${requestId}/`, {
+      const response = await fetch(`${BACKEND_URL}/api/auth/admin/approve/${requestId}/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -194,7 +195,7 @@ export default function SuperAdminDashboardPage() {
         throw new Error('CSRF token not found. Please refresh the page.');
       }
 
-      const response = await fetch(`http://localhost:8000/api/auth/admin/reject/${requestId}/`, {
+      const response = await fetch(`${BACKEND_URL}/api/auth/admin/reject/${requestId}/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -605,7 +606,7 @@ export default function SuperAdminDashboardPage() {
   // Fetch all users
   const fetchUsers = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/auth/users/", {
+      const response = await fetch(`${BACKEND_URL}/api/auth/users/`, {
         credentials: "include",
       });
       
@@ -632,7 +633,7 @@ export default function SuperAdminDashboardPage() {
   // Fetch all admins
   const fetchAdmins = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/auth/admins/", {
+      const response = await fetch(`${BACKEND_URL}/api/auth/admins/`, {
         credentials: "include",
       });
       
@@ -666,7 +667,7 @@ export default function SuperAdminDashboardPage() {
         throw new Error('CSRF token not found. Please refresh the page.');
       }
 
-      const response = await fetch(`http://localhost:8000/api/auth/user/${userId}/delete/`, {
+      const response = await fetch(`${BACKEND_URL}/api/auth/user/${userId}/delete/`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -708,7 +709,7 @@ export default function SuperAdminDashboardPage() {
         throw new Error('CSRF token not found. Please refresh the page.');
       }
 
-      const response = await fetch(`http://localhost:8000/api/auth/admin/${adminId}/delete/`, {
+      const response = await fetch(`${BACKEND_URL}/api/auth/admin/${adminId}/delete/`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {

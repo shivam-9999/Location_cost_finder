@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getCsrfToken } from "@/lib/auth";
+import { BACKEND_URL } from "@/constants";
 
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`${name}=([^;]+)`));
@@ -100,7 +102,7 @@ export default function AdminSignupPage() {
     
     try {
       // First get CSRF token from Django backend
-      const csrfResponse = await fetch("http://localhost:8000/api/auth/csrf/", {
+      const csrfResponse = await fetch(`${BACKEND_URL}/api/auth/csrf/`, {
         method: "GET",
         credentials: "include",
       });
@@ -127,7 +129,7 @@ export default function AdminSignupPage() {
       };
       
       // Then attempt signup using the direct backend URL
-      const response = await fetch("http://localhost:8000/api/auth/admin/signup/", {
+      const response = await fetch(`${BACKEND_URL}/api/auth/admin/signup/`, {
         method: "POST",
         headers: {
           "Accept": "application/json",

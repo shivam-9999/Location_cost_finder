@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { BACKEND_URL } from "@/constants";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
     const cookies = request.headers.get('cookie');
     
     // Forward the request to the external API
-    const response = await fetch('http://127.0.0.1:8000/api/location/upload/', {
+    const response = await fetch(`${BACKEND_URL}/api/location/upload/`, {
       method: 'POST',
       headers: {
         'X-CSRFToken': csrfToken || '',
