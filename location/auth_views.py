@@ -617,7 +617,7 @@ def reject_admin_request(request, request_id):
 @permission_classes([IsAuthenticated])
 def delete_user(request, user_id):
     """Delete a regular user. Only accessible by superadmin."""
-if not request.user.is_superuser:
+    if not request.user.is_superuser:
         return Response(
             {'error': 'Only superadmin can delete users'},
             status=status.HTTP_403_FORBIDDEN

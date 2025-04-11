@@ -17,6 +17,7 @@ import urllib.parse
 from sqlalchemy import create_engine, text
 import dj_database_url
 from datetime import timedelta
+import json
 
 load_dotenv()  # Load .env file
 
@@ -32,14 +33,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'  # Set debug to True for testing
+DEBUG = os.getenv('DEBUG', 'False') == 'True'  # Default to False for production
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '.azurewebsites.net',
-    'locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net'
-]
+ALLOWED_HOSTS = json.loads(os.getenv('ALLOWED_HOSTS', '["*"]'))
 
 # Application definition
 
@@ -134,46 +130,72 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_DOMAIN': None,
-    'AUTH_COOKIE_SECURE': False,  # Set to False for local development
+    'AUTH_COOKIE_SECURE': not DEBUG,  # True in production, False in development
     'AUTH_COOKIE_HTTP_ONLY': True,
     'AUTH_COOKIE_PATH': '/',
-    'AUTH_COOKIE_SAMESITE': 'Lax',
+    'AUTH_COOKIE_SAMESITE': 'None',
 }
 
 # Cookie settings
 JWT_AUTH_COOKIE = 'access_token'
 JWT_AUTH_REFRESH_COOKIE = 'refresh_token'
-JWT_AUTH_SECURE = False  # Set to False for local development
+JWT_AUTH_SECURE = not DEBUG  # True in production, False in development
 JWT_AUTH_HTTPONLY = True
-JWT_AUTH_SAMESITE = 'Lax'
+JWT_AUTH_SAMESITE = 'None'
 
 # CSRF settings
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
-    'http://localhost:8000',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:8000',
-]
 
-CSRF_COOKIE_SECURE = False  # Set to False for local development
-SESSION_COOKIE_SECURE = False  # Set to False for local development
-CSRF_COOKIE_HTTPONLY = False
+CSRF_TRUSTED_ORIGINS = json.loads(os.getenv(
+    'CSRF_TRUSTED_ORIGINS',
+    json.dumps([
+        'http://localhost:3000',
+        'http://localhost:8000',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:8000',
+        'https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net'
+    ])
+))
+
+
+CSRF_COOKIE_SECURE = True  # Always set to True for HTTPS
+SESSION_COOKIE_SECURE = True  # Always set to True for HTTPS
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read the cookie
 SESSION_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'None'  # Always use None for cross-origin requests
+SESSION_COOKIE_SAMESITE = 'None'  # Always use None for cross-origin requests
+CSRF_COOKIE_DOMAIN = None  # Allow any subdomain to use the cookie
+CSRF_USE_SESSIONS = False  # Use cookies instead of sessions
 
 # CORS settings
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
+CORS_ALLOWED_ORIGINS = json.loads(os.getenv(
+    'CORS_ALLOWED_ORIGINS',
+    json.dumps([
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net"
+    ])
+))
+
+# Add more CORS settings
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
 ]
 
-# Add CORS_ALLOW_ALL_ORIGINS for development
+# Never use CORS_ALLOW_ALL_ORIGINS in production
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
 
 APPEND_SLASH = False
 
@@ -210,6 +232,21 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
 
 
 # Default primary key field type

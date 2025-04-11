@@ -4,54 +4,50 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
-ENV PORT=8000
-ENV WEBSITES_PORT=8000
 ENV DJANGO_SETTINGS_MODULE=server_location_map.settings
-ENV WEBSITES_ENABLE_APP_SERVICE_STORAGE=false
+ENV PORT=8000
 
 # Set the working directory
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
-    postgresql-client \
-    postgresql-server-dev-all \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
     python3-dev \
-    gcc \
-    curl \
+    libpq-dev \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-    
-# Copy and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Upgrade pip and install wheel
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Copy the Django project
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt --use-pep517
+
+# Copy the project files
 COPY . .
 
-# Create directories for persistent storage
-RUN mkdir -p /home/LogFiles
-RUN mkdir -p /home/Data/LogFiles
-RUN mkdir -p /home/Data/uploads
-RUN mkdir -p /home/Data/db
-RUN mkdir -p /home  # Create /home directory for database
+# Copy the .env file
+COPY .env .
 
-# Set permissions
-RUN chmod -R 777 /home/Data
-RUN chmod -R 777 /home/LogFiles
-RUN chmod -R 777 /home  # Give full permissions to /home directory
+# Create necessary directories
+RUN mkdir -p /app/media
+RUN mkdir -p /app/staticfiles
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
+# Make migrations and migrate
+RUN python manage.py makemigrations
+RUN python manage.py migrate
 
-# Expose the port the app runs on
+# Set permissions
+RUN chmod -R 755 /app
+
+# Expose the port
 EXPOSE 8000
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/ || exit 1
-
-# Start gunicorn with proper configuration
-CMD ["sh", "-c", "python manage.py migrate && gunicorn server_location_map.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile - --error-logfile - --log-level debug"]
+# Start gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "server_location_map.wsgi:application", "--workers", "2", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "debug"]

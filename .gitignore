@@ -44,7 +44,7 @@ location/migrations/
 media/
 staticfiles/
 
-
+.env.docker
 
 
 # Docker
