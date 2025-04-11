@@ -27,7 +27,7 @@ export async function getCsrfToken() {
     
     // Only log a simple message instead of the full data object
     console.log("✅ CSRF token fetched successfully");
-    return data;
+    return data.csrfToken || data; // Extract csrfToken if available
   } catch (error) {
     // Log the error but don't let it crash the app
     console.error("❌ Error:", error);
@@ -38,10 +38,19 @@ export async function getCsrfToken() {
 export async function login(username: string, password: string, loginType: string = "user") {
   try {
     // Get CSRF token first
-    const csrfToken = await getCsrfToken();
+    await getCsrfToken();
     
+    // Get the CSRF token from cookies
+    const csrfToken = getCookie('csrftoken');
+    
+    if (!csrfToken) {
+      throw new Error("CSRF token not found. Please refresh the page.");
+    }
+
     // Determine the endpoint based on login type
     let endpoint = `${BACKEND_URL}/api/auth/login/`;
+
+    console.log("csrftoken in cookies →", document.cookie);
     
     if (loginType === "admin") {
       endpoint = `${BACKEND_URL}/api/auth/admin/login/`;
