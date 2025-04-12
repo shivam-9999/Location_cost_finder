@@ -456,7 +456,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header with Google Maps-inspired gradient */}
-      <div className="bg-gradient-to-r from-blue-500 via-green-400 to-red-400 py-4 shadow-md">
+      <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 hover:from-blue-700 py-4 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
@@ -498,7 +498,7 @@ export default function AdminDashboardPage() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="shadow-lg border border-gray-100 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-green-400 py-4 px-6">
+              <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 hover:from-blue-700 py-4 px-6">
                 <CardTitle className="text-white">Find Location from Image</CardTitle>
               </div>
               <CardContent className="pt-6">
@@ -548,7 +548,7 @@ export default function AdminDashboardPage() {
                   
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-500 via-green-400 to-red-400 hover:from-blue-600 hover:via-green-500 hover:to-red-500 transition-all"
+                    className="w-full bg-blue-500 transition-all"
                     disabled={!selectedImage || isUploading}
                   >
                     {isUploading ? "Processing..." : "Find Location"}
