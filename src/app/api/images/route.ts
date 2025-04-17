@@ -3,11 +3,11 @@ import { BACKEND_URL } from "@/constants";
 
 export async function GET(request: NextRequest) {
   try {
-    // Get cookies from the request
+    // Get cookies and CSRF token from the request
     const cookies = request.headers.get('cookie');
     
     // Forward the request to the external API
-    const response = await fetch(`${BACKEND_URL}/images/`, {
+    const response = await fetch(`${BACKEND_URL}/api/images/`, {
       method: 'GET',
       headers: {
         'Cookie': cookies || '',

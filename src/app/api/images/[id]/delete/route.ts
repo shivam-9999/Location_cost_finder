@@ -8,7 +8,7 @@ export async function DELETE(
   try {
     const cookies = request.headers.get('cookie');
     
-    const response = await fetch(`${BACKEND_URL}/images/${params.id}/delete/`, {
+    const response = await fetch(`${BACKEND_URL}/api/images/${params.id}/delete/`, {
       method: 'DELETE',
       headers: {
         'Cookie': cookies || '',

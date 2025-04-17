@@ -171,6 +171,7 @@ export default function UserDashboardPage() {
         
         // Set authenticated state only after verification
         setIsAuthenticated(true);
+        console.log("🔑 User authenticated:", isAuthenticated);
         
         // Process user information from localStorage
         const user = JSON.parse(userStr);
@@ -194,17 +195,16 @@ export default function UserDashboardPage() {
   const handleLogout = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/logout', {
+      const response = await fetch(`${BACKEND_URL}/api/auth/logout/`, {
         method: 'POST',
         credentials: 'include',
       });
-      
+  
       if (response.ok) {
-        // Clear user information and location data from localStorage
         localStorage.removeItem("user");
         localStorage.removeItem("locationData");
         setLocationData(null);
-        
+  
         toast.success("Logged out successfully", successToastOptions);
         router.push('/login');
       } else {
@@ -217,6 +217,7 @@ export default function UserDashboardPage() {
       setIsLoading(false);
     }
   };
+  
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

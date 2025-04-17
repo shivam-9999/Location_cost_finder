@@ -3,94 +3,100 @@ import { BACKEND_URL } from '../constants';
 
 export async function getCsrfToken() {
   try {
-    // Wrap the fetch in a try-catch to handle any external interference
     const response = await fetch(`${BACKEND_URL}/api/auth/csrf/`, {
       method: "GET",
-      credentials: "include"
-    }).catch(error => {
-      console.warn("Fetch error (might be from extension):", error);
-      throw error;
+      credentials: "include",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+      },
+      mode: "cors",
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
-    // Safely parse the response
-    let data;
-    try {
-      data = await response.json();
-    } catch (parseError) {
-      console.warn("JSON parse error:", parseError);
-      throw new Error("Failed to parse response");
+
+    const data = await response.json();
+    console.log("✅ CSRF token fetched:", data.csrfToken);
+
+    if (!data.csrfToken) {
+      throw new Error("CSRF token missing in JSON response");
     }
-    
-    // Only log a simple message instead of the full data object
-    console.log("✅ CSRF token fetched successfully");
-    return data.csrfToken || data; // Extract csrfToken if available
+
+    return data.csrfToken;
+
   } catch (error) {
-    // Log the error but don't let it crash the app
-    console.error("❌ Error:", error);
+    console.error("❌ CSRF fetch error:", error);
     throw error;
   }
 }
 
+
+
 export async function login(username: string, password: string, loginType: string = "user") {
   try {
-    // Get CSRF token first
-    await getCsrfToken();
-    
-    // Get the CSRF token from cookies
-    const csrfToken = getCookie('csrftoken');
-    
-    if (!csrfToken) {
-      throw new Error("CSRF token not found. Please refresh the page.");
-    }
-
-    // Determine the endpoint based on login type
     let endpoint = `${BACKEND_URL}/api/auth/login/`;
 
-    console.log("csrftoken in cookies →", document.cookie);
-    
+    console.log("🔄 Getting CSRF token...");
+    const csrfToken =await getCsrfToken();
+    // const csrfToken = getCookie('csrftoken');
+    console.log("✅ Got CSRF token:", csrfToken);
+
+    if (!csrfToken) {
+      throw new Error("❌ CSRF token not found. Please refresh the page.");
+    }
+
     if (loginType === "admin") {
       endpoint = `${BACKEND_URL}/api/auth/admin/login/`;
     } else if (loginType === "superadmin") {
       endpoint = `${BACKEND_URL}/api/auth/superadmin/login/`;
     }
-    
+
+    console.log("👉 Making login request to:", endpoint);
+
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-CSRFToken": csrfToken,
+        "Accept": "application/json",
       },
       credentials: "include",
+      mode: "cors",
       body: JSON.stringify({ username, password }),
     });
 
+    console.log("📦 Login response status:", response.status);
+
     if (!response.ok) {
-      const errorData = await response.json();
-      // Only show specific message for 404 (not found) if we're certain
-      if (response.status === 404 && errorData.detail?.includes("not found")) {
+      let errorData;
+      try {
+        errorData = await response.json();
+        console.error("❌ Login failed with response:", errorData);
+      } catch (err) {
+        console.error("❌ Login failed but response not JSON:", response);
+      }
+
+      if (response.status === 404 && errorData?.detail?.includes("not found")) {
         throw new Error(`Username "${username}" not found. Please sign up first.`);
       }
-      // For 401 and other authentication failures, show a generic message
       if (response.status === 401 || response.status === 403) {
         throw new Error("Username or password is incorrect. Please try again.");
       }
-      throw new Error(errorData.detail || "Login failed");
+      throw new Error(errorData?.detail || "Login failed");
     }
 
     const data = await response.json();
-    
-    // Store user information in localStorage
+    console.log("✅ Login success:", data);
+
     if (data.user) {
       localStorage.setItem("user", JSON.stringify(data.user));
     }
-    
+
     return data;
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("🚨 Login error caught:", error);
     throw error;
   }
-} 
+}

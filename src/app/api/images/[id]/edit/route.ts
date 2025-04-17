@@ -9,7 +9,7 @@ export async function PUT(
     const cookies = request.headers.get('cookie');
     const formData = await request.formData();
     
-    const response = await fetch(`${BACKEND_URL}/images/${params.id}/edit/`, {
+    const response = await fetch(`${BACKEND_URL}/api/images/${params.id}/edit/`, {
       method: 'PUT',
       headers: {
         'Cookie': cookies || '',

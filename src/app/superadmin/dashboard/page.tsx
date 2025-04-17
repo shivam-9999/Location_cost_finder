@@ -340,16 +340,16 @@ export default function SuperAdminDashboardPage() {
   const handleLogout = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/logout', {
+      const response = await fetch(`${BACKEND_URL}/api/auth/logout/`, {
         method: 'POST',
         credentials: 'include',
       });
-      
+  
       if (response.ok) {
         localStorage.removeItem("user");
-        localStorage.removeItem("superadminLocationData");
+        localStorage.removeItem("locationData");
         setLocationData(null);
-        
+  
         toast.success("Logged out successfully", successToastOptions);
         router.push('/login');
       } else {
@@ -357,7 +357,6 @@ export default function SuperAdminDashboardPage() {
         toast.error(data.message || "Failed to logout", errorToastOptions);
       }
     } catch (error) {
-      console.error("Logout error:", error);
       toast.error("Error during logout", errorToastOptions);
     } finally {
       setIsLoading(false);

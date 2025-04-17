@@ -1,37 +1,42 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { BACKEND_URL } from '@/constants';
+
+// Ensure this route is not cached
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function POST() {
-  const cookieStore = await cookies();
-  
-  // Create response with success message
-  const response = NextResponse.json(
-    { success: true, message: 'Logged out successfully' },
-    { status: 200 }
-  );
-  
-  // Clear cookies by setting them to expire in the past
-  response.cookies.set('access_token', '', { 
-    expires: new Date(0),
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/'
-  });
-  
-  response.cookies.set('refresh_token', '', { 
-    expires: new Date(0),
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/'
-  });
-  
-  // Clear the csrftoken cookie (case-sensitive)
-  response.cookies.set('csrftoken', '', { 
-    expires: new Date(0),
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/'
-  });
-  
-  return response;
-} 
+  try {
+    const cookieStore = cookies();
+    const csrfToken = (await cookieStore).get('csrftoken')?.value;
+
+    const backendResponse = await fetch(`${BACKEND_URL}/api/auth/logout/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRFToken': csrfToken || '',
+      },
+    });
+
+    if (!backendResponse.ok) {
+      const errorData = await backendResponse.json();
+      return NextResponse.json(
+        { error: errorData.detail || 'Logout failed' },
+        { status: backendResponse.status }
+      );
+    }
+
+    return NextResponse.json(
+      { success: true, message: 'Logged out successfully' },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
