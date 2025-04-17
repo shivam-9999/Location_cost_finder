@@ -1,5 +1,5 @@
-# Use an official Python runtime
-FROM python:3.11-slim
+# Use an official Python runtime with multi-platform support
+FROM --platform=linux/amd64 python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -24,27 +24,28 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # Copy requirements and install dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt --use-pep517
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create necessary directories
+RUN mkdir -p /app/media /app/staticfiles
+
+# Create a non-root user
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
 
 # Copy the project files
 COPY . .
 
-# Copy the .env file
-COPY .env .
+# Set ownership for all files
+RUN chown -R appuser:appuser /app
 
-# Create necessary directories
-RUN mkdir -p /app/media
-RUN mkdir -p /app/staticfiles
+# Switch to non-root user
+USER appuser
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
-
-# Make migrations and migrate
-RUN python manage.py makemigrations
-RUN python manage.py migrate
-
-# Set permissions
-RUN chmod -R 755 /app
+# Collect static files and make migrations
+RUN python manage.py collectstatic --noinput && \
+    python manage.py makemigrations && \
+    python manage.py migrate
 
 # Expose the port
 EXPOSE 8000

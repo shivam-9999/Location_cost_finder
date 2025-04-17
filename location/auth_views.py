@@ -27,10 +27,11 @@ class CookieJWTAuthentication(JWTAuthentication):
     def authenticate(self, request):
         header = self.get_header(request)
         if header is None:
-            # Try to get token from cookie
             raw_token = request.COOKIES.get('access_token')
             if raw_token is None:
                 return None
+        else:
+            raw_token = self.get_raw_token(header)
 
         try:
             validated_token = self.get_validated_token(raw_token)
@@ -38,26 +39,32 @@ class CookieJWTAuthentication(JWTAuthentication):
         except TokenError as e:
             raise InvalidToken(e.args[0])
 
+
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class CSRFCookieView(APIView):
     permission_classes = []
 
     def get(self, request):
         csrf_token = get_token(request)
-        response = Response({'detail': 'CSRF cookie set'})
+        response = Response({'csrfToken': csrf_token})  # ← return token here
         response.set_cookie(
-            key='csrftoken',
+            key=settings.CSRF_COOKIE_NAME,
             value=csrf_token,
-            httponly=False,  # So JS can read and send it
-            secure=False,     # Set False in dev if not using HTTPS
-            samesite='Lax'
+            httponly=True,
+            secure=True,
+            samesite='None',
+            domain='.azurewebsites.net',
+            path='/'
         )
         return response
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
-    # Check if CSRF token exists in cookies
+    print("🔍 Request cookies:", request.COOKIES)
+    print("🔍 X-CSRFToken header:", request.META.get('HTTP_X_CSRFTOKEN'))
+
     csrf_token = request.COOKIES.get('csrftoken')
     if not csrf_token:
         return Response(
@@ -67,12 +74,11 @@ def login_view(request):
 
     username = request.data.get('username')
     password = request.data.get('password')
-    
+
     user = authenticate(username=username, password=password)
     if user is None:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    # Prevent admin and superadmin users from using this endpoint
     if user.is_superuser or user.is_staff or user.groups.filter(name='admin').exists():
         return Response(
             {'error': 'Please use the appropriate admin or superadmin login endpoint'},
@@ -90,10 +96,29 @@ def login_view(request):
         }
     })
 
-    response.set_cookie('access_token', access, httponly=True, secure=True, samesite='Lax')
-    response.set_cookie('refresh_token', str(refresh), httponly=True, secure=True, samesite='Lax')
+    domain = ".azurewebsites.net" if not settings.DEBUG else None
+
+    response.set_cookie(
+        key='access_token',
+        value=access,
+        httponly=True,
+        secure=True,
+        samesite='None',
+        domain=domain,
+        path='/'
+    )
+    response.set_cookie(
+        key='refresh_token',
+        value=str(refresh),
+        httponly=True,
+        secure=True,
+        samesite='None',
+        domain=domain,
+        path='/'
+    )
 
     return response
+
 
 class LogoutView(APIView):
     permission_classes = []  # No authentication required for logout
