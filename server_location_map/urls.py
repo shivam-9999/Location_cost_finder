@@ -1,8 +1,9 @@
 # version 3 : 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
+from django.views.static import serve
 from location.views import LocationImageUploadView
 from location.views import (
     LocationImageListCreateView,
@@ -67,4 +68,15 @@ urlpatterns = [
     path('api/images/<int:pk>/edit/', LocationImageUpdateView.as_view(), name='image-edit'),
     path('api/images/<int:pk>/delete/', LocationImageDeleteView.as_view(), name='image-delete'),
     path('api/images/delete-all/', DeleteAllLocationImagesView.as_view(), name='delete-all-images'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] 
+
+# Always serve media files through Django
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', serve, {
+        'document_root': settings.MEDIA_ROOT,
+    }),
+]
+
+# Add static files serving in debug mode
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
