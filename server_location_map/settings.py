@@ -1,4 +1,3 @@
-
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -252,6 +251,25 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Media files configuration
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Ensure media directory exists
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+
+# File upload settings
+FILE_UPLOAD_PERMISSIONS = 0o777  # Maximum permissions for uploaded files
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o777  # Maximum permissions for upload directories
+
+# Development settings
+if DEBUG:
+    # Serve static and media files in development
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'static'),
+    ]
+    # Ensure static directory exists
+    os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 
 LOGGING = {
     'version': 1,
@@ -267,18 +285,8 @@ LOGGING = {
     },
 }
 
-
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# File upload settings
-FILE_UPLOAD_PERMISSIONS = 0o777  # Maximum permissions for uploaded files
-FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o777  # Maximum permissions for upload directories
-
-# Media files configuration
-MEDIA_URL = '/media/'
-# Enable WhiteNoise to serve static and media in container
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Changed from 'uploads' to 'media' and using pathlib
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',

@@ -76,10 +76,19 @@ def detect_landmark(image_file):
 class LocationImageSerializer(serializers.ModelSerializer):
     home_address = serializers.CharField(write_only=True, required=False)
     image = serializers.ImageField(required=False)
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = LocationImage
-        fields = ['id', 'image', 'uploaded_at', 'latitude', 'longitude', 'distance_km', 'home_address']
+        fields = ['id', 'image', 'image_url', 'uploaded_at', 'latitude', 'longitude', 'distance_km', 'home_address']
+
+    def get_image_url(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
     def validate(self, data):
         """Check for duplicate image in the database, regardless of address."""
@@ -221,16 +230,20 @@ class LocationImageSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         """ Ensures GET, POST, and PUT return the desired response format """
-        landmark_data = detect_landmark(instance.image)
+        try:
+            landmark_data = detect_landmark(instance.image)
+        except Exception as e:
+            logger.error(f"Error detecting landmark: {str(e)}")
+            landmark_data = None
 
         return {
             "id": instance.id,
-            "Address": instance.home_address,  #  Show dynamic address from model
+            "Address": instance.home_address,
             "Latitude": instance.latitude,
             "Longitude": instance.longitude,
             "Landmark": landmark_data["landmark_name"] if landmark_data else "Unknown",
             "Confidence Score": f"{landmark_data['confidence_score']}%" if landmark_data else "0.0%",
             "Coordinates": f"{landmark_data['landmark_lat']}, {landmark_data['landmark_lng']}" if landmark_data else "0.0, 0.0",
             "Distance (Haversine Formula)": f"{instance.distance_km} km",
-            "Image_URL": instance.image.url  # Include image URL in the response
+            "Image_URL": self.get_image_url(instance)
         }

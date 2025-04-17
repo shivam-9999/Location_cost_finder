@@ -58,6 +58,11 @@ class LocationImageListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     authentication_classes = [CookieJWTAuthentication]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -65,7 +70,7 @@ class LocationImageListCreateView(generics.ListCreateAPIView):
 
             # Retrieve saved entry for list display
             queryset = self.get_queryset()
-            response_data = LocationImageSerializer(queryset, many=True).data
+            response_data = LocationImageSerializer(queryset, many=True, context={'request': request}).data
 
             return Response(response_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -78,6 +83,11 @@ class LocationImageDetailView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     authentication_classes = [CookieJWTAuthentication]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
 # ✅ Update (Edit Image Details)
 class LocationImageUpdateView(generics.UpdateAPIView):
     queryset = LocationImage.objects.all()
@@ -85,6 +95,11 @@ class LocationImageUpdateView(generics.UpdateAPIView):
     lookup_field = 'pk'
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     authentication_classes = [CookieJWTAuthentication]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     def perform_update(self, serializer):
         """Improved logic for updating records."""
@@ -103,7 +118,11 @@ class LocationImageDeleteView(generics.DestroyAPIView):
     lookup_field = 'pk'
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     authentication_classes = [CookieJWTAuthentication]
-    
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
 # ✅ Delete all images (Remove all Images)
 class DeleteAllLocationImagesView(generics.DestroyAPIView):
@@ -111,6 +130,11 @@ class DeleteAllLocationImagesView(generics.DestroyAPIView):
     serializer_class = LocationImageSerializer
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     authentication_classes = [CookieJWTAuthentication]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     def delete(self, request, *args, **kwargs):
         total_images = self.get_queryset().count()
