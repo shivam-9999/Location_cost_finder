@@ -26,13 +26,9 @@ import re
 class CookieJWTAuthentication(JWTAuthentication):
     def authenticate(self, request):
         header = self.get_header(request)
-        if header is None:
-            raw_token = request.COOKIES.get('access_token')
-            if raw_token is None:
-                return None
-        else:
-            raw_token = self.get_raw_token(header)
-
+        raw_token = self.get_raw_token(header) if header else request.COOKIES.get('access_token')
+        if raw_token is None:
+            return None
         try:
             validated_token = self.get_validated_token(raw_token)
             return self.get_user(validated_token), validated_token
@@ -43,17 +39,19 @@ class CookieJWTAuthentication(JWTAuthentication):
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class CSRFCookieView(APIView):
     permission_classes = []
+    
 
     def get(self, request):
         csrf_token = get_token(request)
-        response = Response({'csrfToken': csrf_token})  # ← return token here
+        domain = ".locationcostfinder.space" if not settings.DEBUG else None
+        response = Response({'csrfToken': csrf_token})
         response.set_cookie(
             key=settings.CSRF_COOKIE_NAME,
             value=csrf_token,
-            httponly=True,
+            httponly=False,  # ✅ Allow JS access
             secure=True,
             samesite='None',
-            domain='.azurewebsites.net',
+            domain=domain,
             path='/'
         )
         return response
@@ -62,11 +60,8 @@ class CSRFCookieView(APIView):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
-    print("🔍 Request cookies:", request.COOKIES)
-    print("🔍 X-CSRFToken header:", request.META.get('HTTP_X_CSRFTOKEN'))
 
-    csrf_token = request.COOKIES.get('csrftoken')
-    if not csrf_token:
+    if 'csrftoken' not in request.COOKIES:
         return Response(
             {'error': 'CSRF token not found. Please get a CSRF token first.'},
             status=status.HTTP_403_FORBIDDEN
@@ -96,8 +91,9 @@ def login_view(request):
         }
     })
 
-    domain = ".azurewebsites.net" if not settings.DEBUG else None
+    domain = ".locationcostfinder.space" if not settings.DEBUG else None
 
+    # ✅ JWT cookies: secure, HttpOnly
     response.set_cookie(
         key='access_token',
         value=access,
@@ -120,81 +116,94 @@ def login_view(request):
     return response
 
 
+LOGOUT_COOKIE_KWARGS = {
+    'domain': ".locationcostfinder.space",
+    'path': '/',
+}
+
+
 class LogoutView(APIView):
-    permission_classes = []  # No authentication required for logout
-    authentication_classes = []  # No authentication required for logout
-    
+    permission_classes = []
+    authentication_classes = []
+
     def post(self, request):
+        domain = ".locationcostfinder.space" if not settings.DEBUG else None
         response = Response({'message': 'Logged out successfully'})
-        # Clear all auth cookies
-        response.delete_cookie('access_token')
-        response.delete_cookie('refresh_token')
-        response.delete_cookie('csrftoken')
-        # Clear session cookie if it exists
-        response.delete_cookie('sessionid')
+
+        for cookie in ['access_token', 'refresh_token', 'csrftoken', 'sessionid']:
+            response.delete_cookie(
+                key=cookie,
+                path='/',
+                domain=domain,
+                samesite='None',
+            )
+
         return response
+
 
 class LogoutAllDevicesView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
-    
+
     def post(self, request):
         try:
-            # Get the current user
             user = request.user
-            
-            # Get all outstanding tokens for the user
-            outstanding_tokens = OutstandingToken.objects.filter(user=user)
-            
-            # Blacklist all outstanding tokens
-            for token in outstanding_tokens:
+            for token in OutstandingToken.objects.filter(user=user):
                 BlacklistedToken.objects.get_or_create(token=token)
-            
-            # Clear all cookies
+
+            domain = ".locationcostfinder.space" if not settings.DEBUG else None
             response = Response({'message': 'Logged out from all devices successfully'})
-            response.delete_cookie('access_token')
-            response.delete_cookie('refresh_token')
-            response.delete_cookie('csrftoken')
-            # Clear session cookie if it exists
-            response.delete_cookie('sessionid')
-            
+
+            for cookie in ['access_token', 'refresh_token', 'csrftoken', 'sessionid']:
+                response.delete_cookie(
+                    key=cookie,
+                    path='/',
+                    domain=domain,
+                    samesite='None',
+                )
+
             return response
-            
+
         except Exception as e:
             return Response(
                 {'error': f'Error logging out from all devices: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
+
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get('refresh_token')
-        
+
         if not refresh_token:
             return Response(
                 {'error': 'No refresh token found in cookies'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-            
+
         try:
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
-            
+
             response = Response({
                 'message': 'Token refreshed successfully'
             })
-            
-            # Set new access token cookie
+
+            domain = ".locationcostfinder.space" if not settings.DEBUG else None
+
             response.set_cookie(
                 'access_token',
                 access_token,
                 httponly=True,
-                secure=False,
-                samesite='Lax',
+                secure=True,
+                samesite='None',
+                domain=domain,
+                path='/'
             )
-            
+
             return response
-            
+
         except Exception as e:
             return Response(
                 {'error': 'Invalid refresh token'},
@@ -204,7 +213,6 @@ class CustomTokenRefreshView(TokenRefreshView):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def admin_login_view(request):
-    # Check if CSRF token exists in cookies
     csrf_token = request.COOKIES.get('csrftoken')
     if not csrf_token:
         return Response(
@@ -214,20 +222,13 @@ def admin_login_view(request):
 
     username = request.data.get('username')
     password = request.data.get('password')
-    
+
     user = authenticate(username=username, password=password)
     if user is None:
-        return Response(
-            {'error': 'Invalid credentials'}, 
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    # Check if user is staff AND in admin group
     if not user.is_staff or not user.groups.filter(name='admin').exists():
-        return Response(
-            {'error': 'User is not an admin'}, 
-            status=status.HTTP_403_FORBIDDEN
-        )
+        return Response({'error': 'User is not an admin'}, status=status.HTTP_403_FORBIDDEN)
 
     refresh = RefreshToken.for_user(user)
     access = str(refresh.access_token)
@@ -240,15 +241,16 @@ def admin_login_view(request):
         }
     })
 
-    response.set_cookie('access_token', access, httponly=True, secure=True, samesite='Lax')
-    response.set_cookie('refresh_token', str(refresh), httponly=True, secure=True, samesite='Lax')
+    domain = ".locationcostfinder.space" if not settings.DEBUG else None
+
+    response.set_cookie('access_token', access, httponly=True, secure=True, samesite='None', domain=domain, path='/')
+    response.set_cookie('refresh_token', str(refresh), httponly=True, secure=True, samesite='None', domain=domain, path='/')
 
     return response
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def superadmin_login_view(request):
-    # Check if CSRF token exists in cookies
     csrf_token = request.COOKIES.get('csrftoken')
     if not csrf_token:
         return Response(
@@ -258,11 +260,11 @@ def superadmin_login_view(request):
 
     username = request.data.get('username')
     password = request.data.get('password')
-    
+
     user = authenticate(username=username, password=password)
     if user is None or not user.is_superuser:
         return Response(
-            {'error': 'Invalid credentials or not a superadmin user'}, 
+            {'error': 'Invalid credentials or not a superadmin user'},
             status=status.HTTP_401_UNAUTHORIZED
         )
 
@@ -277,8 +279,10 @@ def superadmin_login_view(request):
         }
     })
 
-    response.set_cookie('access_token', access, httponly=True, secure=True, samesite='Lax')
-    response.set_cookie('refresh_token', str(refresh), httponly=True, secure=True, samesite='Lax')
+    domain = ".locationcostfinder.space" if not settings.DEBUG else None
+
+    response.set_cookie('access_token', access, httponly=True, secure=True, samesite='None', domain=domain, path='/')
+    response.set_cookie('refresh_token', str(refresh), httponly=True, secure=True, samesite='None', domain=domain, path='/')
 
     return response
 
@@ -364,7 +368,6 @@ def check_user_details(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def signup_view(request):
-    # Check if CSRF token exists in cookies
     csrf_token = request.COOKIES.get('csrftoken')
     if not csrf_token:
         return Response(
@@ -374,7 +377,7 @@ def signup_view(request):
 
     username = request.data.get('username')
     password = request.data.get('password')
-    email = request.data.get('email', '').strip()  # Make email optional
+    email = request.data.get('email', '').strip()
 
     if not username or not password:
         return Response(
@@ -382,21 +385,18 @@ def signup_view(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Username validation
     if len(username) < 3:
         return Response(
             {'error': 'Username must be at least 3 characters long'},
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Password validation
     if len(password) < 6:
         return Response(
             {'error': 'Password must be at least 6 characters long'},
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Email validation (if provided)
     if email:
         email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_regex, email):
@@ -405,7 +405,6 @@ def signup_view(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    # Check if username already exists
     User = get_user_model()
     if User.objects.filter(username=username).exists():
         return Response(
@@ -413,7 +412,6 @@ def signup_view(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Check if email already exists (if provided)
     if email and User.objects.filter(email=email).exists():
         return Response(
             {'error': 'Email already registered'},
@@ -421,18 +419,10 @@ def signup_view(request):
         )
 
     try:
-        # Create new user
-        user = User.objects.create_user(
-            username=username,
-            password=password,
-            email=email if email else None  # Set email to None if not provided
-        )
-
-        # Add user to 'user' group
+        user = User.objects.create_user(username=username, password=password, email=email if email else None)
         user_group, created = Group.objects.get_or_create(name='user')
         user.groups.add(user_group)
 
-        # Generate tokens
         refresh = RefreshToken.for_user(user)
         access = str(refresh.access_token)
 
@@ -446,9 +436,10 @@ def signup_view(request):
             }
         })
 
-        # Set cookies
-        response.set_cookie('access_token', access, httponly=True, secure=True, samesite='Lax')
-        response.set_cookie('refresh_token', str(refresh), httponly=True, secure=True, samesite='Lax')
+        domain = ".locationcostfinder.space" if not settings.DEBUG else None
+
+        response.set_cookie('access_token', access, httponly=True, secure=True, samesite='None', domain=domain, path='/')
+        response.set_cookie('refresh_token', str(refresh), httponly=True, secure=True, samesite='None', domain=domain, path='/')
 
         return response
 
@@ -457,6 +448,7 @@ def signup_view(request):
             {'error': f'Error creating user: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

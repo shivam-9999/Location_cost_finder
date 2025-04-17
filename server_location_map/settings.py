@@ -24,6 +24,9 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'  # Default to False for production
 
+# For shared cookie access
+BASE_DOMAIN = '.locationcostfinder.space' if not DEBUG else None
+
 # Handle ALLOWED_HOSTS with a default value
 allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '["*"]')
 try:
@@ -123,7 +126,7 @@ SIMPLE_JWT = {
     
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_COOKIE': 'access_token',
-    'AUTH_COOKIE_DOMAIN': None,
+    'AUTH_COOKIE_DOMAIN': BASE_DOMAIN,
     'AUTH_COOKIE_SECURE': True,
     'AUTH_COOKIE_HTTP_ONLY': True,
     'AUTH_COOKIE_PATH': '/',
@@ -148,7 +151,8 @@ CSRF_TRUSTED_ORIGINS = json.loads(os.getenv(
         'http://host.docker.internal:3000',
         'http://host.docker.internal:8000',
         'https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net',
-        'https://locationcostfinder-dgd2efamfzezeea2.scm.canadacentral-01.azurewebsites.net'
+        'https://locationcostfinder-dgd2efamfzezeea2.scm.canadacentral-01.azurewebsites.net',
+        'https://app.locationcostfinder.space'
     ])
 ))
 
@@ -159,7 +163,8 @@ CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read the cookie
 SESSION_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Lax' if DEBUG else 'None'  # Lax in development, None in production
 SESSION_COOKIE_SAMESITE = 'Lax' if DEBUG else 'None'  # Lax in development, None in production
-CSRF_COOKIE_DOMAIN = None if DEBUG else "locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net"
+CSRF_COOKIE_DOMAIN = BASE_DOMAIN
+SESSION_COOKIE_DOMAIN = BASE_DOMAIN
 CSRF_USE_SESSIONS = False  # Use cookies instead of sessions
 CSRF_COOKIE_NAME = 'csrftoken'  # Explicitly set the cookie name
 
@@ -174,7 +179,8 @@ CORS_ALLOWED_ORIGINS = json.loads(os.getenv(
         "http://host.docker.internal:3000",
         "http://host.docker.internal:8000",
         "https://locationcostfinder-dgd2efamfzezeea2.canadacentral-01.azurewebsites.net",
-        "https://locationcostfinder-dgd2efamfzezeea2.scm.canadacentral-01.azurewebsites.net"
+        "https://locationcostfinder-dgd2efamfzezeea2.scm.canadacentral-01.azurewebsites.net",
+        "https://app.locationcostfinder.space"
     ])
 ))
 
