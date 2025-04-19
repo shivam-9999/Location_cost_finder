@@ -3,17 +3,11 @@ import { BACKEND_URL } from "@/constants";
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the form data from the request
     const formData = await request.formData();
-    
-    // Get the CSRF token from the request headers
     const csrfToken = request.headers.get('x-csrf-token');
-    
-    // Get cookies from the request
     const cookies = request.headers.get('cookie');
-    
-    // Forward the request to the external API
-    const response = await fetch(`${BACKEND_URL}/api/location/upload/`, {
+
+    const res = await fetch(`${BACKEND_URL}/api/location/upload/`, {
       method: 'POST',
       headers: {
         'X-CSRFToken': csrfToken || '',
@@ -21,17 +15,44 @@ export async function POST(request: NextRequest) {
       },
       body: formData,
     });
-    
-    // Get the response data
-    const data = await response.json();
-    
-    // Return the response
-    return NextResponse.json(data, { status: response.status });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      let errorMessage = 'Upload failed';
+
+      // ✅ Handle image-level validation errors
+      if (data?.image && Array.isArray(data.image)) {
+        errorMessage = data.image.join(', ');
+      }
+
+      // ✅ Handle detail-level messages
+      else if (data?.detail) {
+        errorMessage = data.detail;
+      }
+
+      // ✅ Handle raw string responses
+      else if (typeof data === 'string') {
+        errorMessage = data;
+      }
+
+      // ✅ Catch any other first key message
+      else if (typeof data === 'object') {
+        const firstKey = Object.keys(data)[0];
+        if (data[firstKey]) {
+          errorMessage = Array.isArray(data[firstKey])
+            ? data[firstKey][0]
+            : data[firstKey];
+        }
+      }
+
+      return NextResponse.json({ error: errorMessage }, { status: res.status });
+    }
+
+    return NextResponse.json(data, { status: res.status });
+
   } catch (error) {
-    console.error('Error in location upload proxy:', error);
-    return NextResponse.json(
-      { error: 'Failed to process request' },
-      { status: 500 }
-    );
+    console.error('Proxy upload error:', error);
+    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
   }
-} 
+}
