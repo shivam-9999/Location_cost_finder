@@ -69,14 +69,3 @@ urlpatterns = [
     path('api/images/<int:pk>/delete/', LocationImageDeleteView.as_view(), name='image-delete'),
     path('api/images/delete-all/', DeleteAllLocationImagesView.as_view(), name='delete-all-images'),
 ]
-
-# Serve media files in both development and production
-urlpatterns += [
-    re_path(r'^media/(?P<path>.*)$', serve, {
-        'document_root': settings.MEDIA_ROOT,
-    }),
-]
-
-# Serve static files in development
-if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

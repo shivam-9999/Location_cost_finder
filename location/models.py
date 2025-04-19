@@ -4,6 +4,7 @@ from django.utils.text import slugify
 import os
 from datetime import datetime
 from django.contrib.auth.models import User
+from storage_backends import AzureMediaStorage
 
 def upload_to(instance, filename):
     """Define image upload path"""
@@ -26,7 +27,7 @@ class AdminRegistrationRequest(models.Model):
 
 class LocationImage(models.Model):
     id = models.AutoField(primary_key=True)
-    image = models.ImageField(upload_to=upload_to)
+    image = models.ImageField(upload_to=upload_to, storage=AzureMediaStorage())
     uploaded_at = models.DateTimeField(auto_now_add=True)
     image_hash = models.CharField(max_length=64, blank=True, null=True)  #  For duplicate detection
     home_address = models.CharField(max_length=255, blank=True, null=True)

@@ -16,6 +16,10 @@ from .serializers import LocationImageSerializer, detect_landmark, get_coordinat
 import logging
 from django.db import connection
 logger = logging.getLogger(__name__)
+from azure.storage.blob import BlobServiceClient
+from django.conf import settings
+import os
+
 
 
 class LocationImageUploadView(generics.CreateAPIView):
@@ -119,10 +123,22 @@ class LocationImageDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     authentication_classes = [CookieJWTAuthentication]
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context['request'] = self.request
-        return context
+    def perform_destroy(self, instance):
+        # Extract file name from full path
+        blob_name = instance.image.name
+
+        try:
+            blob_service_client = BlobServiceClient.from_connection_string(os.getenv("AZURE_STORAGE_CONNECTION_STRING"))
+            container_name = os.getenv("AZURE_CONTAINER", "locationcontainer")
+            blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
+
+            blob_client.delete_blob()
+            print(f"✅ Deleted from Azure: {blob_name}")
+        except Exception as e:
+            print(f"⚠️ Failed to delete blob: {e}")
+
+        # Delete the DB record after blob removal
+        instance.delete()
 
 # ✅ Delete all images (Remove all Images)
 class DeleteAllLocationImagesView(generics.DestroyAPIView):
