@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -76,6 +78,9 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --chat-width: 500px;
+  --chat-height: 650px;
+  --chat-messages-height: 700px;
 }
 
 .dark {
@@ -170,3 +175,152 @@
   border: none !important;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4) !important;
 }
+
+/* Only one .chat-container rule, at the bottom, with fixed size and flex layout */
+.chat-container {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  width: var(--chat-width) !important;
+  height: var(--chat-height) !important;
+  min-width: var(--chat-width) !important;
+  min-height: var(--chat-height) !important;
+  max-width: var(--chat-width) !important;
+  max-height: var(--chat-height) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  background: #fff;
+}
+
+.messages-container {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto !important;
+}
+
+/* Keep only one .bubble rule for message bubbles */
+.bubble {
+  font-size: 18px !important;
+  padding: 1rem 1.25rem !important;
+  max-width: 85% !important;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* Only one .avatar rule for avatars */
+.avatar {
+  height: 48px !important;
+  width: 48px !important;
+  padding: 12px !important;
+}
+
+.avatar svg {
+  height: 24px !important;
+  width: 24px !important;
+}
+
+/* Only one .input-form rule for the input area */
+.input-form {
+  padding: 0.75rem !important;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+}
+
+.input-form input {
+  height: 50px !important;
+  font-size: 16px !important;
+  padding: 0.75rem 1rem !important;
+  flex: 1 1 auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.input-form button {
+  height: 50px !important;
+  width: 50px !important;
+  margin-left: 0.75rem;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+}
+
+/* Typing indicator animation */
+.typing-indicator {
+  padding: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dot {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin: 0 3px;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* Add responsive adjustments for mobile */
+@media (max-width: 768px) {
+  :root {
+    --chat-width: 95vw !important;
+    --chat-height: 85vh !important;
+  }
+  .chat-container {
+    width: var(--chat-width) !important;
+    height: var(--chat-height) !important;
+    bottom: 1rem !important;
+    right: 2.5vw !important;
+  }
+}
+
+/* Make header larger and more prominent */
+.chat-container .card-header {
+  padding: 1.25rem 1.5rem !important;
+}
+
+.chat-container .card-title {
+  font-size: 20px !important;
+}
+
+.chat-container .card-title div {
+  font-size: 16px !important;
+  margin-top: 6px !important;
+}
+
+
+/* .chat-container, .chat-container * {
+  width: 800px !important;
+  min-width: 800px !important;
+  max-width: 1000px !important;
+  height: 900px !important;
+  min-height: 900px !important;
+  max-height: 900px !important;
+  box-sizing: border-box !important;
+} */

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { BACKEND_URL } from "@/constants";
+import Chat from "@/components/ui/chat";
 
 interface LocationData {
   id: number;
@@ -68,6 +69,7 @@ export default function UserDashboardPage() {
   const [editingItem, setEditingItem] = useState<LocationData | null>(null);
   const [editAddress, setEditAddress] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Fetch image history
   const fetchImageHistory = async () => {
@@ -756,6 +758,64 @@ export default function UserDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Chat Component - Positioned Properly */}
+      <div style={{ 
+        position: 'fixed', 
+        bottom: '1rem', 
+        right: '1rem', 
+        zIndex: 9999,
+        display: isChatOpen ? 'block' : 'none'
+      }}>
+        <Chat 
+          title="Travel Assistant" 
+          onClose={() => setIsChatOpen(false)}
+          origin={locationData ? locationData.Address : "Your location"}
+          destination=""
+          placeholder="Ask about travel plans..."
+          isOpen={isChatOpen}
+        />
+      </div>
+      
+      {/* Chat toggle button - visible when chat is closed */}
+      {!isChatOpen && (
+        <button
+          onClick={() => setIsChatOpen(true)}
+          style={{
+            position: 'fixed',
+            bottom: '1rem',
+            right: '1rem',
+            zIndex: 9999,
+            backgroundColor: '#3B82F6',
+            color: 'white',
+            padding: '1rem',
+            borderRadius: '9999px',
+            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.5)',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '3.5rem',
+            height: '3.5rem'
+          }}
+          aria-label="Open chat"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </button>
+      )}
     </div>
   );
 } 
