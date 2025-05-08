@@ -5,6 +5,13 @@
   z-index: 1;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background-color: #f8f9fa;
+  overflow: hidden; /* Prevent content from spilling outside */
+}
+
+/* Prevent map repeating */
+.leaflet-tile-container img {
+  max-width: none !important;
+  max-height: none !important;
 }
 
 /* Marker color filters */

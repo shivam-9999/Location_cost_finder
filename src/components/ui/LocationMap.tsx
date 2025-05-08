@@ -532,10 +532,14 @@ const LocationMap: React.FC<LocationMapProps> = ({
             scrollWheelZoom={true}
             zoomControl={true}
             className="z-10"
+            maxBounds={[[-90, -180], [90, 180]]}
+            minZoom={2}
+            worldCopyJump={false}
           >
             <TileLayer
               attribution='&copy; <a href="https://cartodb.com/attributions">CartoDB</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+              noWrap={true}
             />
             <RoutingControl 
               startLatLng={[currentLocation.lat, currentLocation.lng]} 
