@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { BACKEND_URL } from "@/constants";
 import Chat from "@/components/ui/chat";
+import dynamic from 'next/dynamic';
+import { Map } from 'lucide-react';
 
 interface LocationData {
   id: number;
@@ -56,6 +58,16 @@ const successToastOptions = {
   duration: 3000
 };
 
+// Import MapModal dynamically to avoid SSR issues with Leaflet
+const MapModal = dynamic(() => import('@/components/ui/MapModal'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <p className="text-gray-500">Loading map...</p>
+    </div>
+  ),
+});
+
 export default function UserDashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -70,6 +82,9 @@ export default function UserDashboardPage() {
   const [editAddress, setEditAddress] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [selectedLocationForMap, setSelectedLocationForMap] = useState<LocationData | null>(null);
+  const [userCoordinates, setUserCoordinates] = useState<{lat: number, lng: number} | null>(null);
 
   // Fetch image history
   const fetchImageHistory = async () => {
@@ -193,6 +208,28 @@ export default function UserDashboardPage() {
     
     checkAuth();
   }, [router]);
+
+  // Get user location on component mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserCoordinates({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          // Use a default location if geolocation fails
+          setUserCoordinates({
+            lat: 36.7783, // Default coordinates (California)
+            lng: -119.4179
+          });
+        }
+      );
+    }
+  }, []);
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -468,6 +505,12 @@ export default function UserDashboardPage() {
     }
   };
 
+  // Handle opening the map modal
+  const handleOpenMap = (item: LocationData) => {
+    setSelectedLocationForMap(item);
+    setIsMapModalOpen(true);
+  };
+
   // Show loading state while checking authentication
   if (!isAuthenticated) {
     return (
@@ -630,12 +673,17 @@ export default function UserDashboardPage() {
                       <Label className="text-gray-700 font-medium">Confidence Score</Label>
                       <p className="text-gray-800 mt-1">{locationData["Confidence Score"]}</p>
                     </div>
-                    {locationData["Distance (Haversine Formula)"] && (
-                      <div className="col-span-2 bg-gray-50 p-4 rounded-lg">
-                        <Label className="text-gray-700 font-medium">Distance from Home</Label>
-                        <p className="text-gray-800 mt-1">{locationData["Distance (Haversine Formula)"]}</p>
-                      </div>
-                    )}
+                  </div>
+                  
+                  <div className="flex justify-end mt-4">
+                    <Button
+                      variant="outline"
+                      className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+                      onClick={() => handleOpenMap(locationData)}
+                    >
+                      <Map className="h-4 w-4 mr-2" />
+                      View Map
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -683,56 +731,63 @@ export default function UserDashboardPage() {
                         <Label className="text-gray-700 font-medium">Confidence Score</Label>
                         <p className="text-gray-800 mt-1">{item["Confidence Score"]}</p>
                       </div>
-                      {item["Distance (Haversine Formula)"] && (
-                        <div>
-                          <Label className="text-gray-700 font-medium">Distance from Home</Label>
-                          <p className="text-gray-800 mt-1">{item["Distance (Haversine Formula)"]}</p>
-                        </div>
-                      )}
                       <div className="flex justify-between pt-4">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
-                              onClick={() => {
-                                setEditingItem(item);
-                                setEditAddress(item.Address);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-md">
-                            <DialogHeader>
-                              <DialogTitle className="text-center">Edit Location</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div className="space-y-2">
-                                <Label className="text-gray-700">Current Address</Label>
-                                <p className="text-sm text-gray-500 p-2 bg-gray-50 rounded-md">{item.Address}</p>
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="edit-address" className="text-gray-700">New Address</Label>
-                                <Input
-                                  id="edit-address"
-                                  value={editAddress}
-                                  onChange={(e) => setEditAddress(e.target.value)}
-                                  placeholder="Enter new address"
-                                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                />
-                              </div>
+                        <div className="flex space-x-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
                               <Button
-                                className="w-full bg-gradient-to-r from-blue-500 to-green-400 hover:from-blue-600 hover:to-green-500"
-                                onClick={() => handleEdit(item)}
-                                disabled={isEditing || !editAddress.trim()}
+                                variant="outline"
+                                size="sm"
+                                className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                                onClick={() => {
+                                  setEditingItem(item);
+                                  setEditAddress(item.Address);
+                                }}
                               >
-                                {isEditing ? "Updating..." : "Update Address"}
+                                Edit
                               </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md">
+                              <DialogHeader>
+                                <DialogTitle className="text-center">Edit Location</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                  <Label className="text-gray-700">Current Address</Label>
+                                  <p className="text-sm text-gray-500 p-2 bg-gray-50 rounded-md">{item.Address}</p>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-address" className="text-gray-700">New Address</Label>
+                                  <Input
+                                    id="edit-address"
+                                    value={editAddress}
+                                    onChange={(e) => setEditAddress(e.target.value)}
+                                    placeholder="Enter new address"
+                                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                  />
+                                </div>
+                                <Button
+                                  className="w-full bg-gradient-to-r from-blue-500 to-green-400 hover:from-blue-600 hover:to-green-500"
+                                  onClick={() => handleEdit(item)}
+                                  disabled={isEditing || !editAddress.trim()}
+                                >
+                                  {isEditing ? "Updating..." : "Update Address"}
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+                            onClick={() => handleOpenMap(item)}
+                          >
+                            <Map className="h-4 w-4 mr-1" />
+                            View Map
+                          </Button>
+                        </div>
+                        
                         <Button
                           variant="destructive"
                           size="sm"
@@ -815,6 +870,16 @@ export default function UserDashboardPage() {
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
         </button>
+      )}
+
+      {/* Map Modal */}
+      {isMapModalOpen && selectedLocationForMap && (
+        <MapModal
+          isOpen={isMapModalOpen}
+          onClose={() => setIsMapModalOpen(false)}
+          locationData={selectedLocationForMap}
+          userLocation={userCoordinates || { lat: 36.7783, lng: -119.4179 }}
+        />
       )}
     </div>
   );

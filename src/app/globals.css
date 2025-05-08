@@ -78,8 +78,8 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --chat-width: 500px;
-  --chat-height: 650px;
+  --chat-width: 470px;
+  --chat-height: 680px;
   --chat-messages-height: 700px;
 }
 
@@ -324,3 +324,6 @@
   max-height: 900px !important;
   box-sizing: border-box !important;
 } */
+
+/* Import map-specific styles */
+@import '../styles/map.css';

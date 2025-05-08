@@ -13,7 +13,11 @@ const nextConfig = {
     env: {
       NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
       NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    }
+    },
+    transpilePackages: ['leaflet-routing-machine', 'leaflet-control-geocoder'],
+    webpack(config) {
+      return config;
+    },
   }
   
   module.exports = nextConfig
