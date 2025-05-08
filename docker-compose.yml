@@ -10,10 +10,26 @@ services:
     environment:
       - DEBUG=True
       - ALLOWED_HOSTS=0.0.0.0,127.0.0.1,localhost
+      - REDIS_URL=redis://redis:6379/0  # Point to Redis service
     command: >
       sh -c "echo '📜 Starting Django Application...' &&
              python manage.py migrate &&
+             python manage.py setup_cache &&
              python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    container_name: location_finder_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+
+volumes:
+  redis_data:
 
 # i wnat to make docker compose up of my localproject and docker file is present in same folder
 # run that and create a image and run it so i can execute command docker compose build,up down

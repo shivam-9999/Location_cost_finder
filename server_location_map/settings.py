@@ -200,6 +200,45 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# ====================== CACHE CONFIGURATION ======================
+# Cache configuration based on environment (development vs production)
+if DEBUG:
+    # Development cache (local memory)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'travel-assistant-cache',
+            'TIMEOUT': 86400,  # 24 hours (in seconds)
+        }
+    }
+else:
+    # Production cache
+    # First check if Redis URL is provided in environment
+    REDIS_URL = os.getenv('REDIS_URL')
+    if REDIS_URL:
+        # Redis cache for production
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+                'LOCATION': REDIS_URL,
+                'TIMEOUT': 86400,  # 24 hours (in seconds)
+                'OPTIONS': {
+                    'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                }
+            }
+        }
+    else:
+        # Fallback to database cache if Redis URL is not provided
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+                'LOCATION': 'django_cache_table',
+                'TIMEOUT': 86400,  # 24 hours (in seconds)
+            }
+        }
+
+# ================================================================
+
 # ✅ Always use Azure Storage
 DEFAULT_FILE_STORAGE = "server_location_map.storage_backends.AzureMediaStorage"
 AZURE_ACCOUNT_NAME = os.getenv("AZURE_ACCOUNT_NAME")

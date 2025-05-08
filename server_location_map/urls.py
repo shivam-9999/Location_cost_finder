@@ -34,6 +34,7 @@ from location.auth_views import (
     list_admins
 )
 from rest_framework_simplejwt.views import TokenRefreshView
+from location.travel_info import TravelInfoView, TravelChatView
 
 def check_superuser(request):
     User = get_user_model()
@@ -68,4 +69,6 @@ urlpatterns = [
     path('api/images/<int:pk>/edit/', LocationImageUpdateView.as_view(), name='image-edit'),
     path('api/images/<int:pk>/delete/', LocationImageDeleteView.as_view(), name='image-delete'),
     path('api/images/delete-all/', DeleteAllLocationImagesView.as_view(), name='delete-all-images'),
+    path('api/travel-info/', TravelInfoView.as_view(), name='travel-info'),
+    path('api/travel-chat/', TravelChatView.as_view(), name='travel-chat'),
 ]

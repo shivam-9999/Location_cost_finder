@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     libpq-dev \
     postgresql-client \
+    # Dependencies for Redis client
+    gcc \
+    libc6-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip
