@@ -104,8 +104,14 @@ REST_FRAMEWORK = {
     ]
 }
 
+# Session timeout settings (30 minutes)
+SESSION_COOKIE_AGE = 900  # 30 minutes in seconds
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# JWT token settings need to match the session timeout
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # Changed from 24 hours to 30 minutes
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,

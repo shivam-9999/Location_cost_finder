@@ -135,7 +135,7 @@ class TravelInfoView(APIView):
                 conversation_history = cached_conversation
                 # Log in development mode
                 if settings.DEBUG:
-                    print(f"Restored conversation {conversation_id} from cache")
+                    pass
         
         # 1. Check for rate limiting
         if self.check_rate_limit(request):

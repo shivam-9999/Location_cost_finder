@@ -30,27 +30,20 @@ class LocationImageUploadView(generics.CreateAPIView):
     authentication_classes = [CookieJWTAuthentication]
     
     def create(self, request, *args, **kwargs):
-        # Debug prints
-        print("\n🔄 Request Data:", request.data)
-        print("📁 Files:", request.FILES)
+        # Debug prints removed
         
         # ✅ Enforce `home_address` before passing to serializer
         if 'home_address' not in request.data:
             request.data['home_address'] = "Canada"
 
         serializer = self.get_serializer(data=request.data)
-        print("\n🔍 Before Validation - Serializer Data:", serializer.initial_data)
-
+        
         if serializer.is_valid():
-            print("\n🔥 Serializer Validated:", serializer.validated_data)
             image_instance = serializer.save()
-            print("✅ Saved Instance:", image_instance.id)
-            print("📦 Total records now:", LocationImage.objects.count())
             
             response_data = LocationImageSerializer(image_instance).data
             return Response(response_data, status=status.HTTP_201_CREATED)
         
-        print("\n❌ Validation Errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
