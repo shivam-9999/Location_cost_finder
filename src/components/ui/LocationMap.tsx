@@ -39,8 +39,6 @@ const RoutingControl: React.FC<RoutingControlProps> = ({ startLatLng, endLatLng 
   useEffect(() => {
     if (!map || !StartIcon || !DestinationIcon) return;
     
-    console.log("Setting up routing with start:", startLatLng, "and end:", endLatLng);
-
     // Add start and end markers with appropriate icons
     const startMarker = L.marker([startLatLng[0], startLatLng[1]], {
       icon: StartIcon,
@@ -180,7 +178,6 @@ const LocationMap: React.FC<LocationMapProps> = ({
   
   // Update current location when origin prop changes
   useEffect(() => {
-    console.log("Origin changed:", origin);
     // If origin coordinates are clearly not set (0,0 or similar), use India
     if (Math.abs(origin.lat) < 0.001 && Math.abs(origin.lng) < 0.001) {
       setCurrentLocation(defaultHomeCoordinates);

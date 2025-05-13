@@ -18,7 +18,6 @@ export async function getCsrfToken() {
     }
 
     const data = await response.json();
-    console.log("✅ CSRF token fetched:", data.csrfToken);
 
     if (!data.csrfToken) {
       throw new Error("CSRF token missing in JSON response");
@@ -27,7 +26,6 @@ export async function getCsrfToken() {
     return data.csrfToken;
 
   } catch (error) {
-    console.error("❌ CSRF fetch error:", error);
     throw error;
   }
 }
@@ -38,10 +36,8 @@ export async function login(username: string, password: string, loginType: strin
   try {
     let endpoint = `${BACKEND_URL}/api/auth/login/`;
 
-    console.log("🔄 Getting CSRF token...");
     const csrfToken =await getCsrfToken();
     // const csrfToken = getCookie('csrftoken');
-    console.log("✅ Got CSRF token:", csrfToken);
 
     if (!csrfToken) {
       throw new Error("❌ CSRF token not found. Please refresh the page.");
@@ -67,7 +63,7 @@ export async function login(username: string, password: string, loginType: strin
       body: JSON.stringify({ username, password }),
     });
 
-    console.log("📦 Login response status:", response.status);
+    console.log(" Login response status:", response.status);
 
     if (!response.ok) {
       let errorData;

@@ -12,6 +12,7 @@ import { BACKEND_URL } from "@/constants";
 import Chat from "@/components/ui/chat";
 import dynamic from 'next/dynamic';
 import { Map } from 'lucide-react';
+import AuthLayout from '@/components/layouts/AuthLayout';
 
 interface LocationData {
   id: number;
@@ -188,7 +189,6 @@ export default function UserDashboardPage() {
         
         // Set authenticated state only after verification
         setIsAuthenticated(true);
-        console.log("🔑 User authenticated:", isAuthenticated);
         
         // Process user information from localStorage
         const user = JSON.parse(userStr);
@@ -524,363 +524,365 @@ export default function UserDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header with light blue background */}
-      <div className="bg-blue-500 py-4 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              {/* Location pin icon */}
-              <svg className="h-10 w-10 text-white" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-              </svg>
-              <div className="ml-2">
-                <h1 className="text-2xl font-bold text-white">Location Finder</h1>
-                <p className="text-white text-sm opacity-90">Find and track locations from images</p>
+    <AuthLayout>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header with light blue background */}
+        <div className="bg-blue-500 py-4 shadow-md">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center">
+                {/* Location pin icon */}
+                <svg className="h-10 w-10 text-white" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                </svg>
+                <div className="ml-2">
+                  <h1 className="text-2xl font-bold text-white">Location Finder</h1>
+                  <p className="text-white text-sm opacity-90">Find and track locations from images</p>
+                </div>
               </div>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-white text-blue-500 font-medium rounded-md hover:bg-blue-50 transition-all"
+              >
+                Logout
+              </button>
             </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-white text-blue-500 font-medium rounded-md hover:bg-blue-50 transition-all"
-            >
-              Logout
-            </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 sm:px-0">
-          {/* Welcome message for user */}
-          <div className="bg-white shadow-lg rounded-lg p-6 mb-8 border border-gray-100">
-            <div className="flex items-center">
-              <div className="bg-gradient-to-r from-blue-500 to-green-400 rounded-full p-3 mr-4">
-                <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800">Welcome, {username}!</h2>
-                <p className="text-gray-500">Upload an image to find its location</p>
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 sm:px-0">
+            {/* Welcome message for user */}
+            <div className="bg-white shadow-lg rounded-lg p-6 mb-8 border border-gray-100">
+              <div className="flex items-center">
+                <div className="bg-gradient-to-r from-blue-500 to-green-400 rounded-full p-3 mr-4">
+                  <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800">Welcome, {username}!</h2>
+                  <p className="text-gray-500">Upload an image to find its location</p>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="shadow-lg border border-gray-100 overflow-hidden">
-              <div className="bg-blue-500 py-4 px-6">
-                <CardTitle className="text-white">Find Location from Image</CardTitle>
-              </div>
-              <CardContent className="pt-6">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="image" className="text-gray-700 font-medium">Upload Image</Label>
-                    <div className="flex items-center justify-center w-full">
-                      <label
-                        htmlFor="image-upload"
-                        className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-200 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <svg className="w-12 h-12 mb-4 text-blue-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                          </svg>
-                          <p className="mb-2 text-sm text-gray-700">
-                            <span className="font-semibold">Click to upload</span> or drag and drop
-                          </p>
-                          <p className="text-xs text-gray-500">PNG, JPEG, BMP, TIFF</p>
-                          {selectedImage && (
-                            <p className="text-sm text-blue-500 mt-2 font-medium">
-                              Selected: {selectedImage.name}
-                            </p>
-                          )}
-                        </div>
-                        <input
-                          id="image-upload"
-                          type="file"
-                          className="hidden"
-                          onChange={handleImageChange}
-                          accept=".png,.jpg,.jpeg,.bmp,.tiff"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="home_address" className="text-gray-700 font-medium">Home Address (Optional)</Label>
-                    <Input
-                      id="home_address"
-                      placeholder="Enter your home address"
-                      value={homeAddress}
-                      onChange={(e) => setHomeAddress(e.target.value)}
-                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <Button
-                    type="submit"
-                    className="w-full bg-blue-700 hover:bg-blue-800 text-white transition-all"
-                    disabled={!selectedImage || isUploading}
-                  >
-                    {isUploading ? "Processing..." : "Find Location"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
             
-            {locationData && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <Card className="shadow-lg border border-gray-100 overflow-hidden">
                 <div className="bg-blue-500 py-4 px-6">
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-white">Location Results</CardTitle>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearResults}
-                      className="bg-white text-red-500 border-none hover:bg-gray-100"
-                    >
-                      Clear Results
-                    </Button>
-                  </div>
+                  <CardTitle className="text-white">Find Location from Image</CardTitle>
                 </div>
-                <CardContent className="space-y-6 pt-6">
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    {locationData["Image_URL"] && (
-                      <div>
-                        <div className="flex justify-center">
-                          <img 
-                            src={getCompleteImageUrl(locationData["Image_URL"])} 
-                            alt="Location Image" 
-                            className="max-w-[1000px] max-h-[300px] w-full object-contain" 
+                <CardContent className="pt-6">
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="image" className="text-gray-700 font-medium">Upload Image</Label>
+                      <div className="flex items-center justify-center w-full">
+                        <label
+                          htmlFor="image-upload"
+                          className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-200 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg className="w-12 h-12 mb-4 text-blue-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p className="mb-2 text-sm text-gray-700">
+                              <span className="font-semibold">Click to upload</span> or drag and drop
+                            </p>
+                            <p className="text-xs text-gray-500">PNG, JPEG, BMP, TIFF</p>
+                            {selectedImage && (
+                              <p className="text-sm text-blue-500 mt-2 font-medium">
+                                Selected: {selectedImage.name}
+                              </p>
+                            )}
+                          </div>
+                          <input
+                            id="image-upload"
+                            type="file"
+                            className="hidden"
+                            onChange={handleImageChange}
+                            accept=".png,.jpg,.jpeg,.bmp,.tiff"
                           />
-                        </div>
+                        </label>
                       </div>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <Label className="text-gray-700 font-medium">Address</Label>
-                      <p className="text-gray-800 mt-1">{locationData.Address}</p>
                     </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <Label className="text-gray-700 font-medium">Landmark</Label>
-                      <p className="text-gray-800 mt-1">{locationData.Landmark}</p>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="home_address" className="text-gray-700 font-medium">Home Address (Optional)</Label>
+                      <Input
+                        id="home_address"
+                        placeholder="Enter your home address"
+                        value={homeAddress}
+                        onChange={(e) => setHomeAddress(e.target.value)}
+                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      />
                     </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <Label className="text-gray-700 font-medium">Coordinates</Label>
-                      <p className="text-gray-800 mt-1">{locationData.Coordinates}</p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <Label className="text-gray-700 font-medium">Confidence Score</Label>
-                      <p className="text-gray-800 mt-1">{locationData["Confidence Score"]}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end mt-4">
+                    
                     <Button
-                      variant="outline"
-                      className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
-                      onClick={() => handleOpenMap(locationData)}
+                      type="submit"
+                      className="w-full bg-blue-700 hover:bg-blue-800 text-white transition-all"
+                      disabled={!selectedImage || isUploading}
                     >
-                      <Map className="h-4 w-4 mr-2" />
-                      View Map
+                      {isUploading ? "Processing..." : "Find Location"}
                     </Button>
-                  </div>
+                  </form>
                 </CardContent>
               </Card>
-            )}
-          </div>
-
-          {/* Image History Section */}
-          <div className="mt-12 mb-8">
-            <div className="flex items-center mb-6">
-              <svg className="h-6 w-6 text-blue-500 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18z" />
-              </svg>
-              <h2 className="text-2xl font-bold text-gray-800">Image History</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {imageHistory.map((item) => (
-                <Card key={item.id} className="shadow-md hover:shadow-lg transition-shadow border border-gray-100 overflow-hidden">
-                  <div className="relative h-60 bg-gray-100">
-                    {item.Image_URL && (
-                      <img 
-                        src={getCompleteImageUrl(item.Image_URL)} 
-                        alt={`Location ${item.id}`} 
-                        className="w-full h-full object-contain p-2" 
-                      />
-                    )}
-                    <div className="absolute top-2 left-2 bg-white py-1 px-3 rounded-full shadow-md">
-                      <p className="text-sm font-medium text-gray-700">Location #{item.id}</p>
+              
+              {locationData && (
+                <Card className="shadow-lg border border-gray-100 overflow-hidden">
+                  <div className="bg-blue-500 py-4 px-6">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-white">Location Results</CardTitle>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearResults}
+                        className="bg-white text-red-500 border-none hover:bg-gray-100"
+                      >
+                        Clear Results
+                      </Button>
                     </div>
                   </div>
-                  <CardContent className="pt-4">
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-gray-700 font-medium">Address</Label>
-                        <p className="text-gray-800 mt-1 break-words">{item.Address}</p>
-                      </div>
-                      <div>
-                        <Label className="text-gray-700 font-medium">Landmark</Label>
-                        <p className="text-gray-800 mt-1">{item.Landmark}</p>
-                      </div>
-                      <div>
-                        <Label className="text-gray-700 font-medium">Coordinates</Label>
-                        <p className="text-gray-800 mt-1">{item.Coordinates}</p>
-                      </div>
-                      <div>
-                        <Label className="text-gray-700 font-medium">Confidence Score</Label>
-                        <p className="text-gray-800 mt-1">{item["Confidence Score"]}</p>
-                      </div>
-                      <div className="flex justify-between pt-4">
-                        <div className="flex space-x-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
-                                onClick={() => {
-                                  setEditingItem(item);
-                                  setEditAddress(item.Address);
-                                }}
-                              >
-                                Edit
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-md">
-                              <DialogHeader>
-                                <DialogTitle className="text-center">Edit Location</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                  <Label className="text-gray-700">Current Address</Label>
-                                  <p className="text-sm text-gray-500 p-2 bg-gray-50 rounded-md">{item.Address}</p>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-address" className="text-gray-700">New Address</Label>
-                                  <Input
-                                    id="edit-address"
-                                    value={editAddress}
-                                    onChange={(e) => setEditAddress(e.target.value)}
-                                    placeholder="Enter new address"
-                                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                  />
-                                </div>
-                                <Button
-                                  className="w-full bg-gradient-to-r from-blue-500 to-green-400 hover:from-blue-600 hover:to-green-500"
-                                  onClick={() => handleEdit(item)}
-                                  disabled={isEditing || !editAddress.trim()}
-                                >
-                                  {isEditing ? "Updating..." : "Update Address"}
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
-                            onClick={() => handleOpenMap(item)}
-                          >
-                            <Map className="h-4 w-4 mr-1" />
-                            View Map
-                          </Button>
+                  <CardContent className="space-y-6 pt-6">
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      {locationData["Image_URL"] && (
+                        <div>
+                          <div className="flex justify-center">
+                            <img 
+                              src={getCompleteImageUrl(locationData["Image_URL"])} 
+                              alt="Location Image" 
+                              className="max-w-[1000px] max-h-[300px] w-full object-contain" 
+                            />
+                          </div>
                         </div>
-                        
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-                          onClick={() => handleDelete(item)}
-                        >
-                          Delete
-                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <Label className="text-gray-700 font-medium">Address</Label>
+                        <p className="text-gray-800 mt-1">{locationData.Address}</p>
                       </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <Label className="text-gray-700 font-medium">Landmark</Label>
+                        <p className="text-gray-800 mt-1">{locationData.Landmark}</p>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <Label className="text-gray-700 font-medium">Coordinates</Label>
+                        <p className="text-gray-800 mt-1">{locationData.Coordinates}</p>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <Label className="text-gray-700 font-medium">Confidence Score</Label>
+                        <p className="text-gray-800 mt-1">{locationData["Confidence Score"]}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end mt-4">
+                      <Button
+                        variant="outline"
+                        className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+                        onClick={() => handleOpenMap(locationData)}
+                      >
+                        <Map className="h-4 w-4 mr-2" />
+                        View Map
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-              {imageHistory.length === 0 && (
-                <div className="col-span-full flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
-                  <svg className="h-12 w-12 text-gray-400 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 19h18M5 6h14v10H5V6zm4 13v-3h6v3h-6zm3-19v3" />
-                  </svg>
-                  <p className="text-gray-600 text-center">No image history yet. Upload an image to get started.</p>
-                </div>
               )}
+            </div>
+
+            {/* Image History Section */}
+            <div className="mt-12 mb-8">
+              <div className="flex items-center mb-6">
+                <svg className="h-6 w-6 text-blue-500 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18z" />
+                </svg>
+                <h2 className="text-2xl font-bold text-gray-800">Image History</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {imageHistory.map((item) => (
+                  <Card key={item.id} className="shadow-md hover:shadow-lg transition-shadow border border-gray-100 overflow-hidden">
+                    <div className="relative h-60 bg-gray-100">
+                      {item.Image_URL && (
+                        <img 
+                          src={getCompleteImageUrl(item.Image_URL)} 
+                          alt={`Location ${item.id}`} 
+                          className="w-full h-full object-contain p-2" 
+                        />
+                      )}
+                      <div className="absolute top-2 left-2 bg-white py-1 px-3 rounded-full shadow-md">
+                        <p className="text-sm font-medium text-gray-700">Location #{item.id}</p>
+                      </div>
+                    </div>
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-gray-700 font-medium">Address</Label>
+                          <p className="text-gray-800 mt-1 break-words">{item.Address}</p>
+                        </div>
+                        <div>
+                          <Label className="text-gray-700 font-medium">Landmark</Label>
+                          <p className="text-gray-800 mt-1">{item.Landmark}</p>
+                        </div>
+                        <div>
+                          <Label className="text-gray-700 font-medium">Coordinates</Label>
+                          <p className="text-gray-800 mt-1">{item.Coordinates}</p>
+                        </div>
+                        <div>
+                          <Label className="text-gray-700 font-medium">Confidence Score</Label>
+                          <p className="text-gray-800 mt-1">{item["Confidence Score"]}</p>
+                        </div>
+                        <div className="flex justify-between pt-4">
+                          <div className="flex space-x-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                                  onClick={() => {
+                                    setEditingItem(item);
+                                    setEditAddress(item.Address);
+                                  }}
+                                >
+                                  Edit
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                  <DialogTitle className="text-center">Edit Location</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                  <div className="space-y-2">
+                                    <Label className="text-gray-700">Current Address</Label>
+                                    <p className="text-sm text-gray-500 p-2 bg-gray-50 rounded-md">{item.Address}</p>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-address" className="text-gray-700">New Address</Label>
+                                    <Input
+                                      id="edit-address"
+                                      value={editAddress}
+                                      onChange={(e) => setEditAddress(e.target.value)}
+                                      placeholder="Enter new address"
+                                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                  </div>
+                                  <Button
+                                    className="w-full bg-gradient-to-r from-blue-500 to-green-400 hover:from-blue-600 hover:to-green-500"
+                                    onClick={() => handleEdit(item)}
+                                    disabled={isEditing || !editAddress.trim()}
+                                  >
+                                    {isEditing ? "Updating..." : "Update Address"}
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+                              onClick={() => handleOpenMap(item)}
+                            >
+                              <Map className="h-4 w-4 mr-1" />
+                              View Map
+                            </Button>
+                          </div>
+                          
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                            onClick={() => handleDelete(item)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {imageHistory.length === 0 && (
+                  <div className="col-span-full flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
+                    <svg className="h-12 w-12 text-gray-400 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 19h18M5 6h14v10H5V6zm4 13v-3h6v3h-6zm3-19v3" />
+                    </svg>
+                    <p className="text-gray-600 text-center">No image history yet. Upload an image to get started.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Chat Component - Positioned Properly */}
-      <div style={{ 
-        position: 'fixed', 
-        bottom: '1rem', 
-        right: '1rem', 
-        zIndex: 9999,
-        display: isChatOpen ? 'block' : 'none'
-      }}>
-        <Chat 
-          title="Travel Assistant" 
-          onClose={() => setIsChatOpen(false)}
-          origin={locationData ? locationData.Address : "Your location"}
-          destination=""
-          placeholder="Ask about travel plans..."
-          isOpen={isChatOpen}
-        />
-      </div>
-      
-      {/* Chat toggle button - visible when chat is closed */}
-      {!isChatOpen && (
-        <button
-          onClick={() => setIsChatOpen(true)}
-          style={{
-            position: 'fixed',
-            bottom: '1rem',
-            right: '1rem',
-            zIndex: 9999,
-            backgroundColor: '#3B82F6',
-            color: 'white',
-            padding: '1rem',
-            borderRadius: '9999px',
-            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.5)',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '3.5rem',
-            height: '3.5rem'
-          }}
-          aria-label="Open chat"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {/* Chat Component - Positioned Properly */}
+        <div style={{ 
+          position: 'fixed', 
+          bottom: '1rem', 
+          right: '1rem', 
+          zIndex: 9999,
+          display: isChatOpen ? 'block' : 'none'
+        }}>
+          <Chat 
+            title="Travel Assistant" 
+            onClose={() => setIsChatOpen(false)}
+            origin={locationData ? locationData.Address : "Your location"}
+            destination=""
+            placeholder="Ask about travel plans..."
+            isOpen={isChatOpen}
+          />
+        </div>
+        
+        {/* Chat toggle button - visible when chat is closed */}
+        {!isChatOpen && (
+          <button
+            onClick={() => setIsChatOpen(true)}
+            style={{
+              position: 'fixed',
+              bottom: '1rem',
+              right: '1rem',
+              zIndex: 9999,
+              backgroundColor: '#3B82F6',
+              color: 'white',
+              padding: '1rem',
+              borderRadius: '9999px',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.5)',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '3.5rem',
+              height: '3.5rem'
+            }}
+            aria-label="Open chat"
           >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-          </svg>
-        </button>
-      )}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </button>
+        )}
 
-      {/* Map Modal */}
-      {isMapModalOpen && selectedLocationForMap && (
-        <MapModal
-          isOpen={isMapModalOpen}
-          onClose={() => setIsMapModalOpen(false)}
-          locationData={selectedLocationForMap}
-          userLocation={userCoordinates || { lat: 36.7783, lng: -119.4179 }}
-        />
-      )}
-    </div>
+        {/* Map Modal */}
+        {isMapModalOpen && selectedLocationForMap && (
+          <MapModal
+            isOpen={isMapModalOpen}
+            onClose={() => setIsMapModalOpen(false)}
+            locationData={selectedLocationForMap}
+            userLocation={userCoordinates || { lat: 36.7783, lng: -119.4179 }}
+          />
+        )}
+      </div>
+    </AuthLayout>
   );
 } 
